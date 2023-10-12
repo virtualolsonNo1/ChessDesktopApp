@@ -74,7 +74,7 @@ def piecePotentialTakes(piece, i, j, prevPosition):
 
     #TODO: add en pessant later, but not a rn issue, WAAAAAY more pressing stuff atm
     if piece == 'P':
-        #TOOD: will this shit throw error if not within bounds? idk python well enough lol
+        #TOOD: will this shit throw error if not within bounds? idk python well enough lol. Need to figure out if I should worry about out of bounds on board or if python is smart enough by itself
         if(prevPosition[i - 1][j + 1] != 0 and prevPosition[i - 1][j + 1].issuper() != isWhite):
             numPoss += 1
         if(prevPosition[i - 1][j - 1] != 0 and prevPosition[i - 1][j - 1].issuper() != isWhite):
