@@ -10,12 +10,14 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
             ]
 
-#print position for user to view
-def printPos(position):
-    for p in position:
-        for piece in p:
-            print(str(piece), end=" ")
-        print("\n")
+
+#Unneeded with python chess library
+# #print position for user to view
+# def printPos(position):
+#     for p in position:
+#         for piece in p:
+#             print(str(piece), end=" ")
+#         print("\n")
 
 
 def takenPiece(prevPosition, firstArr, secondArr, thirdArr):
@@ -45,7 +47,7 @@ def takenPiece(prevPosition, firstArr, secondArr, thirdArr):
     #update position with moved piece in its new spot
     if newI is not None and newJ is not None:
         prevPosition[newI][newJ] = pieceMoved
-    return currSquare, newSquare, pieceTaken
+    return currSquare, newSquare
             
 
 def pieceMoved(prevPosition, firstArr, secondArr):
@@ -82,6 +84,7 @@ def pieceMoved(prevPosition, firstArr, secondArr):
 def main():
     #TODO: will need to convert from array to 2d array later, as data not stored like this rn on board
     #Move Arrs
+    print(chess.__file__)
     arr1 = [[1, 1, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -122,70 +125,142 @@ def main():
             [1, 1, 1, 1, 1, 1, 1, 1],
             ]
     
-
-
-
-    #take pos
-    currPos = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-        ['p', 'p', 'p', 'p', 'p', 0, 'p', 'p'],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'p', 0, 0],
-        [0, 0, 0, 0, 'P', 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        ['P', 'P', 'P', 'P', 0, 'P', 'P', 'P'],
-        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],]
-
-    #take arrs
     arr5 = [[1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [1, 1, 1, 1, 0, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
             ]
     
     arr6 = [[1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 0, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
             [1, 1, 1, 1, 0, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
             ]
     
-    arr7 = [[1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 0, 1, 1],
+    arr7 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
             [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr8 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr9 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [1, 1, 1, 1, 0, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    arr10 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr11 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr12 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr13 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
+            ]
+    
+    arr14 = [[1, 0, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1],
             ]
 
-    #already working move a piece shit
 
-    # UpdatePositionNoTake(arr2, initialPosition)
-    # printPos(initialPosition)
+    #start a game:
+    board = chess.Board()
 
     currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
-    print(currSquare)
-    print(newSquare)
-    printPos(initialPosition)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
+
+    # print(currSquare)
+    # print(newSquare)
+    # printPos(initialPosition)
 
     currSquare, newSquare = pieceMoved(initialPosition, arr3, arr4)
-    print(currSquare)
-    print(newSquare)
-    printPos(initialPosition)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
 
-    currSquare, newSquare, pieceTaken = takenPiece(currPos, arr5, arr6, arr7)
-    print(currSquare)
-    print(newSquare)
-    print(pieceTaken)
-    printPos(currPos)
+    currSquare, newSquare = pieceMoved(initialPosition, arr5, arr6)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
+
+    currSquare, newSquare = pieceMoved(initialPosition, arr7, arr8)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
+
+    currSquare, newSquare = takenPiece(initialPosition, arr9, arr10, arr11)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
+
+    currSquare, newSquare = takenPiece(initialPosition, arr12, arr13, arr14)
+    moveStr = currSquare + newSquare
+    board.push_uci(moveStr)
+    print(board)
 
 
 
