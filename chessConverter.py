@@ -1,4 +1,5 @@
 import chess
+import serial
 
 initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -84,6 +85,16 @@ def pieceMoved(prevPosition, firstArr, secondArr):
 def main():
     #TODO: will need to convert from array to 2d array later, as data not stored like this rn on board
     #Move Arrs
+
+    ser = serial.Serial('COM7')
+    print(ser.name)
+    line = ser.readline()
+    print(line)
+
+
+
+
+
     print(chess.__file__)
     arr1 = [[1, 1, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
