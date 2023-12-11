@@ -469,6 +469,46 @@ def main():
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 0, 1, 1, 0, 1, 1, 0],
                 ]
+        
+        arr29 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 0, 0],
+                ]
+        
+        arr30 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 0, 1],
+                ]
+
+        arr31 = [[1, 0, 1, 1, 0, 0, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 0, 1],
+                ]
+        
+        arr32 = [[1, 0, 1, 1, 1, 0, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 0, 1],
+                ]
 
 
 
@@ -547,6 +587,18 @@ def main():
         print('\n')
 
         currSquare, newSquare = takenPiece(initialPosition, arr26, arr27, arr28)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr29, arr30)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr31, arr32)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
@@ -1042,6 +1094,36 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
+        arr49 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 0, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr50 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 0, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr51 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 0, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
         
         currSquare, newSquare = pieceMoved(newInitialPosition, arr1, arr2)
         moveStr = currSquare + newSquare
@@ -1170,6 +1252,12 @@ def main():
         print('\n')
 
         currSquare, newSquare = takenPiece(newInitialPosition, arr46, arr47, arr48)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(newInitialPosition, arr49, arr50, arr51)
         moveStr = currSquare + newSquare
         board2.push_uci(moveStr)
         print(board2)
