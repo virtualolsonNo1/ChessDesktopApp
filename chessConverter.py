@@ -11,59 +11,78 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
             ]
 
-#TODO: Add third function to take care of castling!!!!!
 
 def takenPiece (prevPosition, firstArr, secondArr, thirdArr):
-        #TODO: ADD EN PESSANT!!!
         #variable declaration
         file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         currSquare = None
         newSquare = None
-        pieceTaken = None
         pieceMoved = None
-        secondPieceMoved = None
         newI = None
         newJ = None
-        firstPieceMoved = False
         castled = False
         castledSide = None
+        enPessant = False
 
         #TODO: MAKE WORK FOR TAKING PIECE FIRST RATHER THAN PICKING UP YOUR PIECE FIRST!!!!
         #loop through arrays and position
         for i in range(8):
                 for j in range(8):
                         #if first array is a 0 but the previous position had a piece there, that is the piece that was moved
-                        if firstArr[i][j] == 0 and prevPosition[i][j] != 0 and not firstPieceMoved:
+                        if firstArr[i][j] == 0 and prevPosition[i][j] != 0:
                                 pieceMoved = prevPosition[i][j]
                                 currSquare = file[j] + str(8 - i)
                                 prevPosition[i][j] = 0
                         #if the second array is 0 but the others aren't, that's the piece that was taken
                         if secondArr[i][j] == 0 and firstArr[i][j] != 0 and thirdArr[i][j] != 0:
                                 newSquare = file[j] + str(8 - i)
-                                pieceTaken = prevPosition[i][j]
                                 newI = i
                                 newJ = j
                         #if second array has 0 but previous position doesn't
                         if secondArr[i][j] == 0 and prevPosition[i][j] != 0 and thirdArr[i][j] == 0:
-                                castledSide = file[j] + str(8 - i)
-                                prevPosition[i][j] = 0
-                                castled = True
+                                if prevPosition[i][j] == 'P' or prevPosition[i][j] == 'p':
+                                        #calculate new home for pawn that took en pessant
+                                        if prevPosition[i][j] == 'p':
+                                                newSquare = file[j] + str(8 - i + 1)
+                                                newI = i - 1
+                                                newJ = j
+                                        else:
+                                                newSquare = file[j] + str(8 - i - 1)
+                                                newI = i + 1
+                                                newJ = j
+                                        prevPosition[i][j] = 0
+                                else:
+                                        castledSide = file[j] + str(8 - i)
+                                        prevPosition[i][j] = 0
+                                        castled = True
         #update position with moved piece in its new spot
         if newI is not None and newJ is not None: 
                 prevPosition[newI][newJ] = pieceMoved
         elif castled:
+                #white short castled
                 if currSquare == 'h1' or castledSide == 'h1':
                         currSquare = 'e1'
                         newSquare = 'g1'
+                        prevPosition[7][6] = 'K'
+                        prevPosition[7][5] = 'R'
+                #white long castled
                 elif currSquare == 'a1' or castledSide == 'a1':
                         currSquare = 'e1'
                         newSquare = 'c1'
+                        prevPosition[7][2] = 'K'
+                        prevPosition[7][3] = 'R'
+                #black short castled
                 elif currSquare == 'h8' or castledSide == 'h8':
                         currSquare = 'e8'
                         newSquare = 'g8'
+                        prevPosition[0][6] = 'k'
+                        prevPosition[0][5] = 'r'
+                #black long castled
                 elif currSquare == 'a8' or castledSide == 'a8':
                         currSquare = 'e8'
                         newSquare = 'c8'
+                        prevPosition[0][2] = 'k'
+                        prevPosition[0][3] = 'r'
 
                         
                 
@@ -461,6 +480,7 @@ def main():
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         # print(currSquare)
         # print(newSquare)
@@ -470,56 +490,67 @@ def main():
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr5, arr6)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr7, arr8)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = takenPiece(initialPosition, arr9, arr10, arr11)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = takenPiece(initialPosition, arr12, arr13, arr14)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr15, arr16)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr17, arr18)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = takenPiece(initialPosition, arr19, arr20, arr21)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr22, arr23)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = pieceMoved(initialPosition, arr24, arr25)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         currSquare, newSquare = takenPiece(initialPosition, arr26, arr27, arr28)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
+        print('\n')
 
         board2 = chess.Board()
         newInitialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -791,6 +822,226 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
+        arr27 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr28 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr29 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr30 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr31 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr32 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr33 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr34 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [1, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr35 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [1, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr36 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr37 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr38 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr39 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr40 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr41 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr42 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr43 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr44 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr45 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 1, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr46 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr47 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr48 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
         
         currSquare, newSquare = pieceMoved(newInitialPosition, arr1, arr2)
         moveStr = currSquare + newSquare
@@ -863,6 +1114,68 @@ def main():
         board2.push_uci(moveStr)
         print(board2)
         print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr27, arr28)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr29, arr30)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr31, arr32)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr33, arr34)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(newInitialPosition, arr35, arr36, arr37)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr38, arr39)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr40, arr41)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr42, arr43)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr44, arr45)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(newInitialPosition, arr46, arr47, arr48)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+        
+        
 
 
 
