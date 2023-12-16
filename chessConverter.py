@@ -1,5 +1,6 @@
 import chess
-import serial
+from chess import Board
+# import serial
 
 initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -12,7 +13,8 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ]
 
 
-def takenPiece (prevPosition, firstArr, secondArr, thirdArr):
+#This one's a thiccy...
+def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
         #variable declaration
         file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         currSquare = None
@@ -22,39 +24,105 @@ def takenPiece (prevPosition, firstArr, secondArr, thirdArr):
         newJ = None
         castled = False
         castledSide = None
-        enPessant = False
+        secondArrTake = True
 
         #TODO: MAKE WORK FOR TAKING PIECE FIRST RATHER THAN PICKING UP YOUR PIECE FIRST!!!!
         #loop through arrays and position
+        enteredOnce = False
+        pieceI = None
+        pieceJ = None
+
+        #Loop through first array. If multiple of player's pieces are moved or piece was moved that isn't theirs, then castle or first Array took, otherwise secondArrTake = True
         for i in range(8):
                 for j in range(8):
                         #if first array is a 0 but the previous position had a piece there, that is the piece that was moved
                         if firstArr[i][j] == 0 and prevPosition[i][j] != 0:
-                                pieceMoved = prevPosition[i][j]
-                                currSquare = file[j] + str(8 - i)
-                                prevPosition[i][j] = 0
-                        #if the second array is 0 but the others aren't, that's the piece that was taken
-                        if secondArr[i][j] == 0 and firstArr[i][j] != 0 and thirdArr[i][j] != 0:
-                                newSquare = file[j] + str(8 - i)
-                                newI = i
-                                newJ = j
-                        #if second array has 0 but previous position doesn't
-                        if secondArr[i][j] == 0 and prevPosition[i][j] != 0 and thirdArr[i][j] == 0:
-                                if prevPosition[i][j] == 'P' or prevPosition[i][j] == 'p':
-                                        #calculate new home for pawn that took en pessant
-                                        if prevPosition[i][j] == 'p':
-                                                newSquare = file[j] + str(8 - i + 1)
-                                                newI = i - 1
-                                                newJ = j
-                                        else:
-                                                newSquare = file[j] + str(8 - i - 1)
-                                                newI = i + 1
-                                                newJ = j
+                                if(enteredOnce):
+                                        secondArrTake = False
+                                        prevPosition[pieceI][pieceJ] = pieceMoved
+                                        break
+                                #if it's a piece of the player who's turn it is that was picked up, store said info accordingly
+                                if board.turn == chess.WHITE and prevPosition[i][j].isupper() or board.turn == chess.BLACK and prevPosition[i][j].islower():
+                                        pieceMoved = prevPosition[i][j]
+                                        currSquare = file[j] + str(8 - i)
                                         prevPosition[i][j] = 0
+                                        pieceI = i
+                                        pieceJ = j
+
+                                        #mark enteredOnce as true if first time entering
+                                        enteredOnce = True
+
                                 else:
-                                        castledSide = file[j] + str(8 - i)
-                                        prevPosition[i][j] = 0
-                                        castled = True
+                                        #if it's the opposing player's piece, we know that secondArrTake = false!!!!! therefore different format of arrays than expected
+                                        secondArrTake = False
+                                        #TODO: I think this code is redundant and useless!!!!!!
+                                        if pieceI is not None and pieceJ is not None:
+                                                prevPosition[pieceI][pieceJ] = pieceMoved
+                                        break
+        #if it follows expected format of first array is your piece, next array is taking, then final array, use this code:
+        if secondArrTake:
+                for i in range(8):
+                        for j in range(8):
+                                #if the second array is 0 but the others aren't, that's the piece that was taken
+                                if secondArr[i][j] == 0 and firstArr[i][j] != 0 and thirdArr[i][j] != 0:
+                                        newSquare = file[j] + str(8 - i)
+                                        newI = i
+                                        newJ = j
+                                #if second array has 0 but previous position doesn't
+                                if secondArr[i][j] == 0 and prevPosition[i][j] != 0 and thirdArr[i][j] == 0:
+                                        if prevPosition[i][j] == 'P' or prevPosition[i][j] == 'p':
+                                                #calculate new home for pawn that took en pessant
+                                                if prevPosition[i][j] == 'p':
+                                                        newSquare = file[j] + str(8 - i + 1)
+                                                        newI = i - 1
+                                                        newJ = j
+                                                else:
+                                                        newSquare = file[j] + str(8 - i - 1)
+                                                        newI = i + 1
+                                                        newJ = j
+                                                prevPosition[i][j] = 0
+                                        else:
+                                                castledSide = file[j] + str(8 - i)
+                                                prevPosition[i][j] = 0
+                                                castled = True
+
+        #if piece taken was picked up first or castled by picking up rook first:
+        else:
+                enterAgain = True
+                for i in range(8):
+                        for j in range(8):
+                                #if second array is a 0 but the previous position had a piece there, that is the piece that was moved
+                                if secondArr[i][j] == 0 and prevPosition[i][j] != 0:
+                                        #if it's a piece of the player who's turn it is that was picked up, store said info accordingly
+                                        if board.turn == chess.WHITE and prevPosition[i][j].isupper() or board.turn == chess.BLACK and prevPosition[i][j].islower():
+                                                pieceMoved = prevPosition[i][j]
+                                                currSquare = file[j] + str(8 - i)
+                                                prevPosition[i][j] = 0
+
+                                #if the first array is 0 but the others aren't, that's the piece that was taken
+                                if firstArr[i][j] == 0 and secondArr[i][j] != 0 and thirdArr[i][j] != 0:
+                                        newSquare = file[j] + str(8 - i)
+                                        newI = i
+                                        newJ = j
+                                #if first array has 0 but previous position doesn't
+                                if firstArr[i][j] == 0 and prevPosition[i][j] != 0 and thirdArr[i][j] == 0:
+                                        if prevPosition[i][j] == 'P' or prevPosition[i][j] == 'p':
+                                                #calculate new home for pawn that took en pessant
+                                                if prevPosition[i][j] == 'p':
+                                                        newSquare = file[j] + str(8 - i + 1)
+                                                        newI = i - 1
+                                                        newJ = j
+                                                else:
+                                                        newSquare = file[j] + str(8 - i - 1)
+                                                        newI = i + 1
+                                                        newJ = j
+                                                prevPosition[i][j] = 0
+                                        else:
+                                                castledSide = file[j] + str(8 - i)
+                                                prevPosition[i][j] = 0
+                                                castled = True
+
+
         #update position with moved piece in its new spot
         if newI is not None and newJ is not None: 
                 prevPosition[newI][newJ] = pieceMoved
@@ -82,9 +150,7 @@ def takenPiece (prevPosition, firstArr, secondArr, thirdArr):
                         currSquare = 'e8'
                         newSquare = 'c8'
                         prevPosition[0][2] = 'k'
-                        prevPosition[0][3] = 'r'
-
-                        
+                        prevPosition[0][3] = 'r'                      
                 
         return currSquare, newSquare
             
@@ -251,7 +317,7 @@ def main():
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 ]
 
-        arr9 = [[1, 0, 1, 1, 1, 1, 1, 1],
+        arr10 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
@@ -260,7 +326,7 @@ def main():
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 ]
-        arr10 = [[1, 0, 1, 1, 1, 1, 1, 1],
+        arr9 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -280,7 +346,7 @@ def main():
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 ]
 
-        arr12 = [[1, 0, 1, 1, 1, 1, 1, 1],
+        arr13 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
@@ -290,7 +356,7 @@ def main():
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 ]
 
-        arr13 = [[1, 0, 1, 1, 1, 1, 1, 1],
+        arr12 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -469,46 +535,6 @@ def main():
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 0, 1, 1, 0, 1, 1, 0],
                 ]
-        
-        arr29 = [[1, 0, 1, 1, 0, 1, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 0, 1, 0, 0],
-                ]
-        
-        arr30 = [[1, 0, 1, 1, 0, 1, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 0, 1, 0, 1],
-                ]
-
-        arr31 = [[1, 0, 1, 1, 0, 0, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 0, 1, 0, 1],
-                ]
-        
-        arr32 = [[1, 0, 1, 1, 1, 0, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 0, 1, 0, 1],
-                ]
 
 
 
@@ -544,13 +570,13 @@ def main():
         print(board)
         print('\n')
 
-        currSquare, newSquare = takenPiece(initialPosition, arr9, arr10, arr11)
+        currSquare, newSquare = takenPiece(board, initialPosition, arr9, arr10, arr11)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
         print('\n')
 
-        currSquare, newSquare = takenPiece(initialPosition, arr12, arr13, arr14)
+        currSquare, newSquare = takenPiece(board, initialPosition, arr12, arr13, arr14)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
@@ -568,7 +594,7 @@ def main():
         print(board)
         print('\n')
 
-        currSquare, newSquare = takenPiece(initialPosition, arr19, arr20, arr21)
+        currSquare, newSquare = takenPiece(board, initialPosition, arr19, arr20, arr21)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
@@ -586,19 +612,7 @@ def main():
         print(board)
         print('\n')
 
-        currSquare, newSquare = takenPiece(initialPosition, arr26, arr27, arr28)
-        moveStr = currSquare + newSquare
-        board.push_uci(moveStr)
-        print(board)
-        print('\n')
-
-        currSquare, newSquare = pieceMoved(initialPosition, arr29, arr30)
-        moveStr = currSquare + newSquare
-        board.push_uci(moveStr)
-        print(board)
-        print('\n')
-
-        currSquare, newSquare = pieceMoved(initialPosition, arr31, arr32)
+        currSquare, newSquare = takenPiece(board, initialPosition, arr26, arr27, arr28)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
         print(board)
@@ -814,7 +828,7 @@ def main():
                 [1, 0, 0, 0, 1, 1, 1, 1],
                 ]
         
-        arr21 = [[1, 0, 0, 0, 1, 1, 1, 1],
+        arr22 = [[1, 0, 0, 0, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [0, 1, 1, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -824,7 +838,7 @@ def main():
                 [0, 0, 0, 0, 1, 1, 1, 1],
                 ]
         
-        arr22 = [[1, 0, 0, 0, 1, 1, 1, 1],
+        arr21 = [[1, 0, 0, 0, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [0, 1, 1, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -954,7 +968,7 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
-        arr35 = [[0, 0, 1, 1, 0, 1, 1, 1],
+        arr36 = [[0, 0, 1, 1, 0, 1, 1, 1],
                 [0, 1, 1, 1, 1, 1, 1, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [1, 0, 0, 0, 1, 0, 0, 0],
@@ -964,7 +978,7 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
-        arr36 = [[0, 0, 1, 1, 0, 1, 1, 1],
+        arr35 = [[0, 0, 1, 1, 0, 1, 1, 1],
                 [0, 1, 1, 1, 1, 1, 1, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
@@ -1064,7 +1078,7 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
-        arr46 = [[0, 0, 1, 1, 0, 1, 1, 1],
+        arr47 = [[0, 0, 1, 1, 0, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
@@ -1074,7 +1088,7 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
-        arr47 = [[0, 0, 1, 1, 0, 1, 1, 1],
+        arr46 = [[0, 0, 1, 1, 0, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
@@ -1091,36 +1105,6 @@ def main():
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 1, 1, 0, 1, 0, 0],
                 [1, 1, 1, 1, 1, 0, 1, 1],
-                [0, 0, 1, 1, 0, 1, 1, 1],
-                ]
-        
-        arr49 = [[0, 0, 1, 1, 0, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 0, 1],
-                [0, 1, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 1, 1, 0, 1, 0, 0],
-                [1, 1, 1, 1, 0, 0, 1, 1],
-                [0, 0, 1, 1, 0, 1, 1, 1],
-                ]
-        
-        arr50 = [[0, 0, 1, 1, 0, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 0, 1],
-                [0, 1, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 1, 1, 0, 0, 0, 0],
-                [1, 1, 1, 1, 0, 0, 1, 1],
-                [0, 0, 1, 1, 0, 1, 1, 1],
-                ]
-        
-        arr51 = [[0, 0, 1, 1, 0, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 0, 1],
-                [0, 1, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 1, 1, 0, 1, 0, 0],
-                [1, 1, 1, 1, 0, 0, 1, 1],
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
@@ -1185,13 +1169,13 @@ def main():
         print(board2)
         print('\n')
 
-        currSquare, newSquare = takenPiece(newInitialPosition, arr21, arr22, arr23)
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr21, arr22, arr23)
         moveStr = currSquare + newSquare
         board2.push_uci(moveStr)
         print(board2)
         print('\n')
 
-        currSquare, newSquare = takenPiece(newInitialPosition, arr24, arr25, arr26)
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr24, arr25, arr26)
         moveStr = currSquare + newSquare
         board2.push_uci(moveStr)
         print(board2)
@@ -1221,7 +1205,7 @@ def main():
         print(board2)
         print('\n')
 
-        currSquare, newSquare = takenPiece(newInitialPosition, arr35, arr36, arr37)
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr35, arr36, arr37)
         moveStr = currSquare + newSquare
         board2.push_uci(moveStr)
         print(board2)
@@ -1251,13 +1235,7 @@ def main():
         print(board2)
         print('\n')
 
-        currSquare, newSquare = takenPiece(newInitialPosition, arr46, arr47, arr48)
-        moveStr = currSquare + newSquare
-        board2.push_uci(moveStr)
-        print(board2)
-        print('\n')
-
-        currSquare, newSquare = takenPiece(newInitialPosition, arr49, arr50, arr51)
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr46, arr47, arr48)
         moveStr = currSquare + newSquare
         board2.push_uci(moveStr)
         print(board2)
