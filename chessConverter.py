@@ -1,6 +1,6 @@
 import chess
 from chess import Board
-# import serial
+import serial
 
 initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -188,47 +188,61 @@ def pieceMoved(prevPosition, firstArr, secondArr):
 def main():
 
         #TODO: improve connection process so can try to connect until board is ready, not having to start this after board is running
-        # ser = serial.Serial('COM7')
-        # print(ser.name)
+        isConn = False
+        while not isConn:
+                try:
+                        ser = serial.Serial('COM7')
+                        print(ser.name)
+                        isConn = True
+                except:
+                        continue
 
         # #TODO: add shit later to make it work for multiple games
-        # #start a game:
-        # board = chess.Board()
+        #start a game:
+        board = chess.Board()
 
-        # #TODO: update to better method of receiving data and get sending working eventually for LEDs
-        # while True:
-        #         line = ser.readline()
-        #         strline = line.decode('ascii')
-        #         if 'MovePlayed\n' in strline:
-        #                 extra0 = ser.read(1)
-        #                 print(extra0)
-        #                 numArrs = ser.read(1)
-        #                 numArrs = int.from_bytes(numArrs, byteorder='big')
-        #                 print(numArrs)
-        #                 arr1 = None
-        #                 arr2 = None
-        #                 arr3 = None
-        #                 if (numArrs == 3):
-        #                         arr1 = ser.read(64)
-        #                         arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
-        #                         arr2 = ser.read(64)
-        #                         arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
-        #                         arr3 = ser.read(64)
-        #                         arr3 = [[arr3[row * 8 + col] for col in range(8)] for row in range(8)]
-        #                 elif (numArrs == 2):
-        #                         arr1 = ser.read(64)
-        #                         arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
-        #                         arr2 = ser.read(64)
-        #                         arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
-        #                 else:
-        #                         raise Exception("NUM ARRS SHOULD BE 2 or 3!!!!!")  
-        #                 print(arr1)
-        #                 print(arr2)
+        #TODO: update to better method of receiving data and get sending working eventually for LEDs
+        while True:
+                line = ser.readline()
+                strline = line.decode('ascii')
+                if 'MovePlayed\n' in strline:
+                        extra0 = ser.read(1)
+                        print(extra0)
+                        numArrs = ser.read(1)
+                        numArrs = int.from_bytes(numArrs, byteorder='big')
+                        print(numArrs)
+                        arr1 = None
+                        arr2 = None
+                        arr3 = None
+                        if (numArrs == 3):
+                                arr1 = ser.read(64)
+                                arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
+                                arr2 = ser.read(64)
+                                arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
+                                arr3 = ser.read(64)
+                                arr3 = [[arr3[row * 8 + col] for col in range(8)] for row in range(8)]
+                                currSquare, newSquare = takenPiece(board, initialPosition, arr1, arr2, arr3)
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                        elif (numArrs == 2):
+                                arr1 = ser.read(64)
+                                arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
+                                arr2 = ser.read(64)
+                                arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
+                                currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                        else:
+                                raise Exception("NUM ARRS SHOULD BE 2 or 3!!!!!")  
+                        # print(arr1)
+                        # print(arr2)
 
-        #                 currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
-        #                 moveStr = currSquare + newSquare
-        #                 board.push_uci(moveStr)
-        #                 print(board)
+                        # currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
+                        # moveStr = currSquare + newSquare
+                        # board.push_uci(moveStr)
+                        # print(board)
 
         
 
