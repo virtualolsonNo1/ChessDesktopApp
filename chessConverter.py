@@ -1,6 +1,7 @@
 import chess
 from chess import Board
 import serial
+import copy
 
 initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -11,6 +12,8 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
             ]
+
+lastPosition = None
 
 
 #This one's a thiccy...
@@ -88,7 +91,6 @@ def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
 
         #if piece taken was picked up first or castled by picking up rook first:
         else:
-                enterAgain = True
                 for i in range(8):
                         for j in range(8):
                                 #if second array is a 0 but the previous position had a piece there, that is the piece that was moved
@@ -99,8 +101,9 @@ def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
                                                 currSquare = file[j] + str(8 - i)
                                                 prevPosition[i][j] = 0
 
+                                #TODO: DO i need the secondArr[i][j] == 0????????
                                 #if the first array is 0 but the others aren't, that's the piece that was taken
-                                if firstArr[i][j] == 0 and secondArr[i][j] != 0 and thirdArr[i][j] != 0:
+                                if firstArr[i][j] == 0 and secondArr[i][j] == 0 and thirdArr[i][j] != 0:
                                         newSquare = file[j] + str(8 - i)
                                         newI = i
                                         newJ = j
@@ -126,6 +129,8 @@ def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
         #update position with moved piece in its new spot
         if newI is not None and newJ is not None: 
                 prevPosition[newI][newJ] = pieceMoved
+                if (pieceMoved == 'P' or pieceMoved == 'p') and (newI == 0 or newI == 7):
+                        newSquare += 'q'
         elif castled:
                 #white short castled
                 if currSquare == 'h1' or castledSide == 'h1':
@@ -179,6 +184,8 @@ def pieceMoved(prevPosition, firstArr, secondArr):
                                 newJ = j
         if newI is not None and newJ is not None:
                 prevPosition[newI][newJ] = pieceMoved
+                if (pieceMoved == 'P' or pieceMoved == 'p') and (newI == 0 or newI == 7):
+                        newSquare += 'q'
 
         return currSquare, newSquare
 
@@ -186,8 +193,9 @@ def pieceMoved(prevPosition, firstArr, secondArr):
 
 
 def main():
-
-        #TODO: improve connection process so can try to connect until board is ready, not having to start this after board is running
+        global initialPosition
+        #TODO: ADD ERROR HANDLING WITH LAST POSITION LATER!!!!!
+        global lastPosition 
         isConn = False
         while not isConn:
                 try:
@@ -197,23 +205,32 @@ def main():
                 except:
                         continue
 
-        # #TODO: add shit later to make it work for multiple games
+        #TODO: add shit later to make it work for multiple games, when reset button pressed!!!!!
         #start a game:
         board = chess.Board()
+        lastPosition = copy.deepcopy(initialPosition)
+
 
         #TODO: update to better method of receiving data and get sending working eventually for LEDs
         while True:
                 line = ser.readline()
                 strline = line.decode('ascii')
                 if 'MovePlayed\n' in strline:
-                        extra0 = ser.read(1)
-                        print(extra0)
+                        #set lastPosition to initialPosition for error handling purposes
+                        lastPosition = copy.deepcopy(initialPosition)
+
+                        #read in number of arrays that'll be sent
                         numArrs = ser.read(1)
                         numArrs = int.from_bytes(numArrs, byteorder='big')
                         print(numArrs)
+
+                        #variable declaration
                         arr1 = None
                         arr2 = None
                         arr3 = None
+
+                        #handle if it's a capture/castle vs a movement
+                        #capture
                         if (numArrs == 3):
                                 arr1 = ser.read(64)
                                 arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
@@ -225,6 +242,10 @@ def main():
                                 moveStr = currSquare + newSquare
                                 board.push_uci(moveStr)
                                 print(board)
+                                # correct = "correct"
+                                # correct = correct.encode('ascii')
+                                # ser.write(correct)
+                        #move of piece
                         elif (numArrs == 2):
                                 arr1 = ser.read(64)
                                 arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
@@ -232,17 +253,22 @@ def main():
                                 arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
                                 currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
                                 moveStr = currSquare + newSquare
+
+                                #TODO: ADD BETTER RESEND SHIT!!!!!!
+                                # if moveStr == 'h1h1':
+                                #         initialPosition = copy.deepcopy(lastPosition)
+                                #         print("fuck this shit")
+                                #         resend = "resend\n"
+                                #         resend = resend.encode('ascii')
+                                #         ser.write(resend)
+                                #         continue
                                 board.push_uci(moveStr)
                                 print(board)
+                                # correct = "correct"
+                                # correct = correct.encode('ascii')
+                                # ser.write(correct)
                         else:
                                 raise Exception("NUM ARRS SHOULD BE 2 or 3!!!!!")  
-                        # print(arr1)
-                        # print(arr2)
-
-                        # currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
-                        # moveStr = currSquare + newSquare
-                        # board.push_uci(moveStr)
-                        # print(board)
 
         
 
@@ -334,7 +360,7 @@ def main():
         arr10 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 0, 1, 1, 1],
@@ -345,7 +371,7 @@ def main():
                 [0, 0, 1, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 ]
@@ -363,7 +389,7 @@ def main():
         arr13 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 0, 1, 1, 1],
@@ -372,7 +398,7 @@ def main():
 
         arr12 = [[1, 0, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 1, 1, 1],
-                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -549,8 +575,226 @@ def main():
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 0, 1, 1, 0, 1, 1, 0],
                 ]
+        
+        arr29 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr30 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr31 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr32 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr33 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr34 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr35 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [1, 0, 0, 0, 0, 1, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr36 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [1, 0, 0, 0, 0, 1, 0, 1],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
 
+        arr37 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 1, 0, 1],
+                [0, 1, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr38 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 1, 0, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr39 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [1, 0, 0, 0, 0, 1, 0, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr40 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [1, 0, 0, 0, 0, 1, 0, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr41 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [1, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
 
+        arr42 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [1, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr43 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr44 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr45 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr46 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr47 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr48 = [[0, 0, 1, 1, 0, 1, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr49 = [[0, 0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr50 = [[1, 0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 1],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0],
+                ]
 
 
         #start a game:
@@ -631,6 +875,63 @@ def main():
         board.push_uci(moveStr)
         print(board)
         print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr29, arr30)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr31, arr32)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr33, arr34)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr35, arr36)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(board, initialPosition, arr37, arr38, arr39)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = pieceMoved(initialPosition, arr40, arr41)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(board, initialPosition, arr42, arr43, arr44)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(board, initialPosition, arr45, arr46, arr47)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(board, initialPosition, arr48, arr49, arr50)
+        moveStr = currSquare + newSquare
+        board.push_uci(moveStr)
+        print(board)
+        print('\n')
+
+
+        print("Second game\n")
 
         board2 = chess.Board()
         newInitialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -1096,7 +1397,7 @@ def main():
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 1, 1, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 0, 1, 1],
                 [0, 0, 1, 1, 0, 1, 1, 1],
@@ -1106,7 +1407,7 @@ def main():
                 [1, 1, 1, 1, 1, 1, 0, 1],
                 [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
                 [0, 0, 1, 1, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 0, 1, 1],
                 [0, 0, 1, 1, 0, 1, 1, 1],
@@ -1122,6 +1423,157 @@ def main():
                 [0, 0, 1, 1, 0, 1, 1, 1],
                 ]
         
+        arr49 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr50 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr51 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr52 = [[0, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr53 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr54 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 0, 1, 0, 0],
+                [0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr55 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 0, 1, 0, 0],
+                [0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr56 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 0, 1, 0, 0],
+                [0, 1, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr57 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr58 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr59 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr60 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 1, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr61 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+        arr62 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 0, 1, 1, 0],
+                ]
+        
+        arr63 = [[1, 0, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1, 0, 1],
+                [0, 1, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 0, 1, 1, 1],
+                ]
+        
+
         
         currSquare, newSquare = pieceMoved(newInitialPosition, arr1, arr2)
         moveStr = currSquare + newSquare
@@ -1255,10 +1707,41 @@ def main():
         print(board2)
         print('\n')
         
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr49, arr50)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
         
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr51, arr52, arr53)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
 
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr54, arr55)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
 
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr56, arr57, arr58)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
 
+        currSquare, newSquare = pieceMoved(newInitialPosition, arr59, arr60)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
+
+        currSquare, newSquare = takenPiece(board2, newInitialPosition, arr61, arr62, arr63)
+        moveStr = currSquare + newSquare
+        board2.push_uci(moveStr)
+        print(board2)
+        print('\n')
 
 
 if __name__ == '__main__':
