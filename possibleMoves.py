@@ -28,14 +28,7 @@ ledState = [[0, 0, 0, 0, 0, 0, 0, 0],
             ]
 
 
-#TODO: PLAN!!!!!
-#   - report when piece picked up, we send back lights for possible moves
-#   - rest handled on chess board, where it can turn off all LEDs if piece put back or the led of square it moved onto of allowed squares
-
 def piecePossibleMoves(board, pieceI, pieceJ):
-    #TODO: WHAT IF TURNED OFF LED WHEN YOU LAND ON IT TO HELP USER KNOW PIECE THERE!!!!!!!!!
-    #TODO: can use has_en_passant and has_kingside/queenside_castling_rights
-    #TODO: use find_move with every 1 in array after is_pinned, as you'd think is_pinned and is_check would be good, but if check, can maybe use piece to block..., so this seems easier
     file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     pieceSquare = file[pieceJ] + str(8 - pieceI)
 

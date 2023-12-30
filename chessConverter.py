@@ -1,6 +1,6 @@
 import chess
 from chess import Board
-import serial
+# import serial
 import copy
 from possibleMoves import piecePossibleMoves
 
@@ -16,6 +16,15 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
 
 lastPosition = None
 
+#TODO: PLAN!!!!!
+#   - report when piece picked up, we send back lights for possible moves
+#   - rest handled on chess board, where it can turn off all LEDs if piece put back down or the led of square it moved onto of allowed squares
+
+#TODO: LATER AFTER ABOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#TODO: send squares for the move (should be similar/same for takes and moves) instead of just arrays, and then make your move and call it a day. WAAAAAAY easier than this shit
+#TODO: add ability to redo move if they send invalid move
+#TODO: add no clock mode where it sends move after opponent piece moves???????
+
 
 #This one's a thiccy...
 def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
@@ -30,7 +39,6 @@ def takenPiece(board, prevPosition, firstArr, secondArr, thirdArr):
         castledSide = None
         secondArrTake = True
 
-        #TODO: MAKE WORK FOR TAKING PIECE FIRST RATHER THAN PICKING UP YOUR PIECE FIRST!!!!
         #loop through arrays and position
         enteredOnce = False
         pieceI = None
