@@ -25,7 +25,15 @@ ledState = [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0]
             ]
 
+
+#TODO: PLAN!!!!!
+#   - report when piece picked up, we send back lights for possible moves
+#   - rest handled on chess board, where it can turn off all LEDs if piece put back or the led of square it moved onto of allowed squares
+
 def piecePossibleMoves(piece, pieceI, pieceJ, prevPosition):
+    #TODO: WHAT IF TURNED OFF LED WHEN YOU LAND ON IT TO HELP USER KNOW PIECE THERE!!!!!!!!!
+    #TODO: can use has_en_passant and has_kingside/queenside_castling_rights
+    #TODO: use find_move with every 1 in array after is_pinned, as you'd think is_pinned and is_check would be good, but if check, can maybe use piece to block..., so this seems easier
     isWhite = None
     if piece.isupper():
         isWhite = True
@@ -33,41 +41,50 @@ def piecePossibleMoves(piece, pieceI, pieceJ, prevPosition):
         isWhite = False
     numPoss = 0
 
-    #TODO: USE find_move() function!!!!!!!!!!!!!!!
     possMoves = []
     if piece == 'P':
-        if(prevPosition[pieceI + 1][pieceJ + 1] != 0 and prevPosition[pieceI + 1][pieceJ + 1].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ <= 7):
-            ledState[pieceI + 1][pieceJ + 1] = 1
-        if(prevPosition[pieceI + 1][pieceJ - 1] != 0 and prevPosition[pieceI + 1][pieceJ - 1].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ >= 0):
-            ledState[pieceI + 1][pieceJ - 1] = 1
-        if(prevPosition[pieceI + 1][pieceJ] == 0 and pieceI + 1 <= 7):
-            ledState[pieceI + 1][pieceJ] = 1
-    elif piece == 'p':
         if(prevPosition[pieceI - 1][pieceJ + 1] != 0 and prevPosition[pieceI - 1][pieceJ + 1].issuper() != isWhite and pieceI - 1 >= 0 and pieceJ + 1 <= 7):
             ledState[pieceI - 1][pieceJ + 1] = 1
         if(prevPosition[pieceI - 1][pieceJ - 1] != 0 and prevPosition[pieceI - 1][pieceJ - 1].issuper() != isWhite and pieceI - 1 >= 0 and pieceJ - 1 >= 0):
             ledState[pieceI - 1][pieceJ - 1] = 1
         if(prevPosition[pieceI - 1][pieceJ] == 0 and pieceI >= 0):
             ledState[pieceI - 1][pieceJ] = 1
+    #if the piece is a pawn
+    elif piece == 'p':
+        if(prevPosition[pieceI + 1][pieceJ + 1] != 0 and prevPosition[pieceI + 1][pieceJ + 1].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ <= 7):
+            ledState[pieceI + 1][pieceJ + 1] = 1
+        if(prevPosition[pieceI + 1][pieceJ - 1] != 0 and prevPosition[pieceI + 1][pieceJ - 1].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ >= 0):
+            ledState[pieceI + 1][pieceJ - 1] = 1
+        if(prevPosition[pieceI + 1][pieceJ] == 0 and pieceI + 1 <= 7):
+            ledState[pieceI + 1][pieceJ] = 1
+    #if the piece is a knight
     elif piece == 'N' or piece == 'n':
+        #2 down and 1 to the right
         if(prevPosition[pieceI + 2][pieceJ + 1] != 0 and prevPosition[pieceI + 2][pieceJ + 1].issuper() != isWhite and pieceI + 2 <= 7 and pieceJ + 1 <= 7):
             ledState[pieceI + 2][pieceJ + 1] = 1
+        #2 down and 1 to the left
         if(prevPosition[pieceI + 2][pieceJ - 1] != 0 and prevPosition[pieceI + 2][pieceJ - 1].issuper() != isWhite and pieceI + 2 <= 7 and pieceJ - 1 >= 0):
             ledState[pieceI + 2][pieceJ - 1] = 1
+        #2 up and 1 to the right
         if(prevPosition[pieceI - 2][pieceJ + 1] != 0 and prevPosition[pieceI - 2][pieceJ + 1].issuper() != isWhite and pieceI - 2 >= 0 and pieceJ + 1 <= 7):
             ledState[pieceI - 2][pieceJ + 1] = 1
+        #2 up and 1 to the left
         if(prevPosition[pieceI - 2][pieceJ - 1] != 0 and prevPosition[pieceI - 2][pieceJ - 1].issuper() != isWhite and pieceI - 2 >= 0 and pieceJ - 1 >= 0):
             ledState[pieceI - 2][pieceJ - 1] = 1
+        #1 down and 2 to the right
         if(prevPosition[pieceI + 1][pieceJ + 2] != 0 and prevPosition[pieceI + 1][pieceJ + 2].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ + 2 <= 7):
             ledState[pieceI + 1][pieceJ + 2] = 1
+        #1 down and 2 to the left
         if(prevPosition[pieceI + 1][pieceJ - 2] != 0 and prevPosition[pieceI + 1][pieceJ - 2].issuper() != isWhite and pieceI + 1 <= 7 and pieceJ - 2 >= 0):
             ledState[pieceI + 1][pieceJ - 2] = 1
+        #1 up and 2 to the right
         if(prevPosition[pieceI - 1][pieceJ + 2] != 0 and prevPosition[pieceI - 1][pieceJ + 2].issuper() != isWhite and pieceI - 1 >= 0 and pieceJ + 2 <= 7):
             ledState[pieceI - 1][pieceJ + 2] = 1
+        #1 up and 2 to the left
         if(prevPosition[pieceI - 1][pieceJ - 2] != 0 and prevPosition[pieceI - 1][pieceJ - 2].issuper() != isWhite and pieceI - 1 >= 0 and pieceJ - 2 >= 0):
             ledState[pieceI - 1][pieceJ - 2] = 1
+    #If the piece is a bishop
     elif piece == 'B' or piece == 'b':
-        #TODO: NEED TO LOOP THROUGH ARRAY BACKWARDS TO GET OTHER MOVES PROPERLY
 
         #down and to right
         for i in range(pieceI + 1, 8):
@@ -125,17 +142,18 @@ def piecePossibleMoves(piece, pieceI, pieceJ, prevPosition):
                 break
             else:
                 break
-        ledState[pieceI][pieceJ] = 1
         printPos(prevPosition)
         print('\n')
         printPos(ledState)
         
         
-
+    #if the piece is a rook
     elif piece == 'R' or piece == 'r':
         return 0
+    #if the piece is a queen
     elif piece == 'Q' or piece == 'q':
         return 0
+    #if the piece is a king
     elif piece == 'K' or piece == 'k':
         return 0
             
@@ -143,7 +161,7 @@ def piecePossibleMoves(piece, pieceI, pieceJ, prevPosition):
 
 if __name__ == '__main__':
 
-    prevPosition = [
+    prevPosBishopTest = [
         [0, 0, 'k', 'r', 0, 'b', 'n', 'r'],
         ['P', 'b', 'p', 'q', 'p', 'p', 0, 'p'],
         [0, 'p', 0, 'p', 0, 0, 0, 0],
@@ -154,6 +172,6 @@ if __name__ == '__main__':
         [0, 0, 0, 'R', 'K', 'B', 'N', 'R']
         ]
 
-    piecePossibleMoves('b', 1, 1, prevPosition)
+    piecePossibleMoves('b', 1, 1, prevPosBishopTest)
 
 
