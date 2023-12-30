@@ -2,6 +2,7 @@ import chess
 from chess import Board
 import serial
 import copy
+from possibleMoves import piecePossibleMoves
 
 initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -194,81 +195,81 @@ def pieceMoved(prevPosition, firstArr, secondArr):
 
 def main():
         global initialPosition
-        #TODO: ADD ERROR HANDLING WITH LAST POSITION LATER!!!!!
-        global lastPosition 
-        isConn = False
-        while not isConn:
-                try:
-                        ser = serial.Serial('COM7')
-                        print(ser.name)
-                        isConn = True
-                except:
-                        continue
+        # #TODO: ADD ERROR HANDLING WITH LAST POSITION LATER!!!!!
+        # global lastPosition 
+        # isConn = False
+        # while not isConn:
+        #         try:
+        #                 ser = serial.Serial('COM7')
+        #                 print(ser.name)
+        #                 isConn = True
+        #         except:
+        #                 continue
 
-        #TODO: add shit later to make it work for multiple games, when reset button pressed!!!!!
-        #start a game:
-        board = chess.Board()
-        lastPosition = copy.deepcopy(initialPosition)
+        # #TODO: add shit later to make it work for multiple games, when reset button pressed!!!!!
+        # #start a game:
+        # board = chess.Board()
+        # lastPosition = copy.deepcopy(initialPosition)
 
 
-        #TODO: update to better method of receiving data and get sending working eventually for LEDs
-        while True:
-                line = ser.readline()
-                strline = line.decode('ascii')
-                if 'MovePlayed\n' in strline:
-                        #set lastPosition to initialPosition for error handling purposes
-                        lastPosition = copy.deepcopy(initialPosition)
+        # #TODO: update to better method of receiving data and get sending working eventually for LEDs
+        # while True:
+        #         line = ser.readline()
+        #         strline = line.decode('ascii')
+        #         if 'MovePlayed\n' in strline:
+        #                 #set lastPosition to initialPosition for error handling purposes
+        #                 lastPosition = copy.deepcopy(initialPosition)
 
-                        #read in number of arrays that'll be sent
-                        numArrs = ser.read(1)
-                        numArrs = int.from_bytes(numArrs, byteorder='big')
-                        print(numArrs)
+        #                 #read in number of arrays that'll be sent
+        #                 numArrs = ser.read(1)
+        #                 numArrs = int.from_bytes(numArrs, byteorder='big')
+        #                 print(numArrs)
 
-                        #variable declaration
-                        arr1 = None
-                        arr2 = None
-                        arr3 = None
+        #                 #variable declaration
+        #                 arr1 = None
+        #                 arr2 = None
+        #                 arr3 = None
 
-                        #handle if it's a capture/castle vs a movement
-                        #capture
-                        if (numArrs == 3):
-                                arr1 = ser.read(64)
-                                arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
-                                arr2 = ser.read(64)
-                                arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
-                                arr3 = ser.read(64)
-                                arr3 = [[arr3[row * 8 + col] for col in range(8)] for row in range(8)]
-                                currSquare, newSquare = takenPiece(board, initialPosition, arr1, arr2, arr3)
-                                moveStr = currSquare + newSquare
-                                board.push_uci(moveStr)
-                                print(board)
-                                # correct = "correct"
-                                # correct = correct.encode('ascii')
-                                # ser.write(correct)
-                        #move of piece
-                        elif (numArrs == 2):
-                                arr1 = ser.read(64)
-                                arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
-                                arr2 = ser.read(64)
-                                arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
-                                currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
-                                moveStr = currSquare + newSquare
+        #                 #handle if it's a capture/castle vs a movement
+        #                 #capture
+        #                 if (numArrs == 3):
+        #                         arr1 = ser.read(64)
+        #                         arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
+        #                         arr2 = ser.read(64)
+        #                         arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
+        #                         arr3 = ser.read(64)
+        #                         arr3 = [[arr3[row * 8 + col] for col in range(8)] for row in range(8)]
+        #                         currSquare, newSquare = takenPiece(board, initialPosition, arr1, arr2, arr3)
+        #                         moveStr = currSquare + newSquare
+        #                         board.push_uci(moveStr)
+        #                         print(board)
+        #                         # correct = "correct"
+        #                         # correct = correct.encode('ascii')
+        #                         # ser.write(correct)
+        #                 #move of piece
+        #                 elif (numArrs == 2):
+        #                         arr1 = ser.read(64)
+        #                         arr1 = [[arr1[row * 8 + col] for col in range(8)] for row in range(8)]
+        #                         arr2 = ser.read(64)
+        #                         arr2 = [[arr2[row * 8 + col] for col in range(8)] for row in range(8)]
+        #                         currSquare, newSquare = pieceMoved(initialPosition, arr1, arr2)
+        #                         moveStr = currSquare + newSquare
 
-                                #TODO: ADD BETTER RESEND SHIT!!!!!!
-                                # if moveStr == 'h1h1':
-                                #         initialPosition = copy.deepcopy(lastPosition)
-                                #         print("fuck this shit")
-                                #         resend = "resend\n"
-                                #         resend = resend.encode('ascii')
-                                #         ser.write(resend)
-                                #         continue
-                                board.push_uci(moveStr)
-                                print(board)
-                                # correct = "correct"
-                                # correct = correct.encode('ascii')
-                                # ser.write(correct)
-                        else:
-                                raise Exception("NUM ARRS SHOULD BE 2 or 3!!!!!")  
+        #                         #TODO: ADD BETTER RESEND SHIT!!!!!!
+        #                         # if moveStr == 'h1h1':
+        #                         #         initialPosition = copy.deepcopy(lastPosition)
+        #                         #         print("fuck this shit")
+        #                         #         resend = "resend\n"
+        #                         #         resend = resend.encode('ascii')
+        #                         #         ser.write(resend)
+        #                         #         continue
+        #                         board.push_uci(moveStr)
+        #                         print(board)
+        #                         # correct = "correct"
+        #                         # correct = correct.encode('ascii')
+        #                         # ser.write(correct)
+        #                 else:
+        #                         raise Exception("NUM ARRS SHOULD BE 2 or 3!!!!!")  
 
         
 
@@ -852,6 +853,8 @@ def main():
         print(board)
         print('\n')
 
+        piecePossibleMoves(board, 7, 4)
+
         currSquare, newSquare = takenPiece(board, initialPosition, arr19, arr20, arr21)
         moveStr = currSquare + newSquare
         board.push_uci(moveStr)
@@ -911,6 +914,7 @@ def main():
         board.push_uci(moveStr)
         print(board)
         print('\n')
+        piecePossibleMoves(board, 6, 4)
 
         currSquare, newSquare = takenPiece(board, initialPosition, arr42, arr43, arr44)
         moveStr = currSquare + newSquare
