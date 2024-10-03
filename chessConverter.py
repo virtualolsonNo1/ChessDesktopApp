@@ -13,33 +13,29 @@ class HIDClockModeReports:
         self.reportId = 0
         self.firstPickupRow = 0
         self.firstPickupCol = 0
-        self.secondPickupState = [[0 for _ in range(8)] for _ in range(8)]
         self.secondPickupRow = 0
         self.secondPickupCol = 0
-        self.thirdPickupState = [[0 for _ in range(8)] for _ in range(8)]
+        self.finalPickupRow = 0
+        self.finalPickupCol = 0
 
     @classmethod
     def from_bytes(cls, data):
         report = cls()
-        report.reportId, report.firstPickupRow, report.firstPickupCol = struct.unpack('<BBB', data[:3])
-        
+        data_bytes = bytes(data)  # Convert list to bytes
+        report.reportId, report.firstPickupRow, report.firstPickupCol = struct.unpack('<BBB', data_bytes[:3])
         if report.reportId == 1:
-            # For Report 1, unpack secondPickupState
-            for i in range(8):
-                report.secondPickupState[i] = list(data[(3+i*8):(3+(i+1)*8)])
+            report.finalPickupRow, report.finalPickupCol = struct.unpack('<BB', data_bytes[3:5])
         elif report.reportId == 2:
             # For Report 2, unpack secondPickupCol, secondPickupRow, and thirdPickupState
-            report.secondPickupRow, report.secondPickupCol = struct.unpack('<BB', data[3:5])
-            for i in range(8):
-                report.thirdPickupState[i] = list(data[(5+i*8):(5+(i+1)*8)])
+            report.secondPickupRow, report.secondPickupCol, report.finalPickupRow, report.finalPickupCol  = struct.unpack('<BBBB', data_bytes[3:7])
         
         return report
 
     def __str__(self):
         if self.reportId == 1:
-            return f"Report 1: firstPickup({self.firstPickupCol}, {self.firstPickupRow}), secondPickupState: {self.secondPickupState}"
+            return f"Report 1: firstPickup({self.firstPickupRow}, {self.firstPickupCol}), finalData({self.finalPickupRow, self.finalPickupCol})"
         elif self.reportId == 2:
-            return f"Report 2: firstPickup({self.firstPickupCol}, {self.firstPickupRow}), secondPickup({self.secondPickupCol}, {self.secondPickupRow}), thirdPickupState: {self.thirdPickupState}"
+            return f"Report 2: firstPickup({self.firstPickupRow}, {self.firstPickupCol}), secondPickup({self.secondPickupRow}, {self.secondPickupCol}), finalData: ({self.finalPickupRow, self.finalPickupCol})"
         else:
             return f"Unknown Report: {self.reportId}"
 
@@ -56,17 +52,19 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
 lastPosition = None
 
 #TODO: PLAN!!!!!
-#   - report when piece picked up, we send back lights for possible moves
-#   - rest handled on chess board, where it can turn off all LEDs if piece put back down or the led of square it moved onto of allowed squares
+#   - get rid of secondPickupArr and thirdPickupArr
+#   - After making move, have desktop app send chess board the updated position
+#   - have report for game over from chess board to desktop app
+#   - make report for when piece picked up, where desktop app send back lights for possible moves
+#   - rest handled on chess board, where it can turn off all LEDs if piece put back down or the led of square it moved onto one of allowed squares
 
 #TODO: LATER AFTER ABOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#TODO: send squares for the move (should be similar/same for takes and moves) instead of just arrays, and then make your move and call it a day. WAAAAAAY easier than this shit
 #TODO: add ability to redo move if they send invalid move
 #TODO: add no clock mode where it sends move after opponent piece moves???????
 
 
 #This one's a thiccy...
-def takenPiece(board, prevPosition, firstPickupRow, firstPickupCol, secondPickupRow, secondPickupCol, thirdArr):
+def takenPiece(board, prevPosition, firstPickupRow, firstPickupCol, secondPickupRow, secondPickupCol, finalPickupRow, finalPickupCol):
     #variable declaration
     file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     currSquare = None
@@ -103,18 +101,22 @@ def takenPiece(board, prevPosition, firstPickupRow, firstPickupCol, secondPickup
         newJ = secondPickupCol
 
         #check for en pessant
-        if (thirdArr[secondPickupRow][secondPickupCol] != 1):
+        if (finalPickupRow < 8 and finalPickupCol < 8 and prevPosition[finalPickupRow][finalPickupCol] == 0):
             #calculate new home for pawn that took en pessant
             if prevPosition[secondPickupRow][secondPickupCol] == 'p':
                 # set new square to 1 rank higher than spot opponent pawn was at
-                newSquare = file[secondPickupCol] + str(8 - secondPickupRow + 1)
-                newI = secondPickupRow - 1
-                newJ = secondPickupCol
+                newSquare = file[finalPickupCol] + str(8 - finalPickupRow)
+                # newI = secondPickupRow - 1
+                # newJ = secondPickupCol
+                newI = finalPickupRow
+                newJ = finalPickupCol
             else:
                 # set new square to 1 rank lower than spot opponent pawn was at
-                newSquare = file[secondPickupCol] + str(8 - secondPickupRow - 1)
-                newI = secondPickupRow + 1
-                newJ = secondPickupCol
+                newSquare = file[finalPickupCol] + str(8 - finalPickupRow)
+                # newI = secondPickupRow + 1
+                # newJ = secondPickupCol
+                newI = finalPickupRow
+                newJ = finalPickupCol
             prevPosition[secondPickupRow][secondPickupCol] = 0
         else:
             newSquare = file[secondPickupCol] + str(8 - secondPickupRow)
@@ -160,7 +162,7 @@ def takenPiece(board, prevPosition, firstPickupRow, firstPickupCol, secondPickup
     return currSquare, newSquare
             
 
-def pieceMoved(prevPosition, firstPickupRow, firstPickupCol, secondArr):
+def pieceMoved(prevPosition, firstPickupRow, firstPickupCol, finalPickupRow, finalPickupCol):
     #variable declaration
     file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     currSquare = None
@@ -175,13 +177,10 @@ def pieceMoved(prevPosition, firstPickupRow, firstPickupCol, secondArr):
         currSquare = file[firstPickupCol] + str(8 - firstPickupRow)
         prevPosition[firstPickupRow][firstPickupCol] = 0
 
-    for i in range(8):
-        for j in range(8):
-            #if second array is 1 and first array isn't, then that's the new square
-            if secondArr[i][j] == 1 and prevPosition[i][j] == 0:
-                newSquare = file[j] + str(8 - i)
-                newI = i
-                newJ = j
+    if prevPosition[finalPickupRow][finalPickupCol] != 1:
+        newSquare = file[finalPickupCol] + str(8 - finalPickupRow)
+        newI = finalPickupRow
+        newJ = finalPickupCol
 
     if newI is not None and newJ is not None:
             prevPosition[newI][newJ] = pieceMoved
@@ -216,13 +215,13 @@ def main():
         while True:
             try:
                 # Read the report
-                data = h.read(69, timeout_ms=1000)  # Adjust size if needed
+                data = h.read(7, timeout_ms=1000)  # Adjust size if needed
                 if data:
                     report_id = data[0]
                     if report_id == 1:
                         report1 = HIDClockModeReports.from_bytes(data)
                         print(report1)
-                        currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.secondPickupState)
+                        currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
                         moveStr = currSquare + newSquare
                         board.push_uci(moveStr)
                         print(board)
@@ -230,7 +229,7 @@ def main():
                     elif report_id == 2:
                         report2 = HIDClockModeReports.from_bytes(data)
                         print(report2)  # 3 sets of pickup data
-                        currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.thirdPickupState)
+                        currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
                         moveStr = currSquare + newSquare
                         board.push_uci(moveStr)
                         print(board)
@@ -274,6 +273,8 @@ def main():
     
     firstMoveRow = 6
     firstMoveCol = 4
+    firstMoveRow2 = 4
+    firstMoveCol2 = 4
 
 
     # second move
@@ -299,6 +300,8 @@ def main():
     
     secondMoveRow = 1
     secondMoveCol = 4
+    secondMoveRow2 = 3
+    secondMoveCol2 = 4
 
     #third move
     arr5 = [[1, 1, 1, 1, 1, 1, 1, 1],
@@ -323,6 +326,8 @@ def main():
 
     thirdMoveRow = 7
     thirdMoveCol = 6
+    thirdMoveRow2 = 5
+    thirdMoveCol2 = 5
 
     arr7 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 0, 1, 1, 1],
@@ -346,6 +351,8 @@ def main():
 
     fourthMoveRow = 0
     fourthMoveCol = 1
+    fourthMoveRow2 = 2
+    fourthMoveCol2 = 2
 
     arr10 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 0, 1, 1, 1],
@@ -381,6 +388,9 @@ def main():
 
     fifthMoveRow2 = 5
     fifthMoveCol2 = 5
+    
+    fifthMoveRow3 = 8
+    fifthMoveCol3 = 8
 
 
     arr13 = [[1, 0, 1, 1, 1, 1, 1, 1],
@@ -416,6 +426,8 @@ def main():
     sixthMoveCol = 2
     sixthMoveRow2 = 3
     sixthMoveCol2 = 4
+    sixthMoveRow3 = 8
+    sixthMoveCol3 = 8
     
     arr15 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 0, 1, 1, 1],
@@ -439,6 +451,8 @@ def main():
     
     seventhMoveRow = 7
     seventhMoveCol = 5
+    seventhMoveRow2 = 6
+    seventhMoveCol2 = 4
     
     arr17 = [[1, 0, 1, 1, 1, 0, 1, 1],
             [1, 1, 1, 1, 0, 1, 1, 1],
@@ -462,6 +476,8 @@ def main():
 
     eighthMoveRow = 0
     eighthMoveCol = 5
+    eighthMoveRow2 = 1
+    eighthMoveCol2 = 4
     
     arr19 = [[1, 0, 1, 1, 1, 0, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -497,6 +513,8 @@ def main():
     ninethMoveCol = 4
     ninethMoveRow2 = 7
     ninethMoveCol2 = 7
+    ninethMoveRow3 = 8
+    ninethMoveCol3 = 8
     
     arr22 = [[1, 0, 1, 1, 1, 0, 0, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -519,6 +537,8 @@ def main():
             ]
     tenthMoveRow = 0
     tenthMoveCol = 6
+    tenthMoveRow2 = 2
+    tenthMoveCol2 = 5
     
     # arr22 = [[1, 0, 1, 1, 1, 0, 0, 1],
     # 		[1, 1, 1, 1, 1, 1, 1, 1],
@@ -561,6 +581,8 @@ def main():
             ]
     eleventhMoveRow = 7
     eleventhMoveCol = 1
+    eleventhMoveRow2 = 5
+    eleventhMoveCol2 = 2
     
     arr26 = [[1, 0, 1, 1, 1, 0, 0, 0],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -595,6 +617,8 @@ def main():
     twelfthMoveCol = 7
     twelfthMoveRow2 = 0
     twelfthMoveCol2 = 4
+    twelfthMoveRow3 = 8
+    twelfthMoveCol3 = 8
     
     arr29 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -617,6 +641,8 @@ def main():
             ]
     thirteenthMoveRow = 6
     thirteenthMoveCol = 1
+    thirteenthMoveRow2 = 4
+    thirteenthMoveCol2 = 1
     
     arr31 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 1, 1],
@@ -640,6 +666,8 @@ def main():
 
     fourteenthMoveRow = 1
     fourteenthMoveCol = 0
+    fourteenthMoveRow2 = 2
+    fourteenthMoveCol2 = 0
     
     arr33 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 1, 1],
@@ -662,6 +690,8 @@ def main():
             ]
     fifteenthMoveRow = 4
     fifteenthMoveCol = 1
+    fifteenthMoveRow2 = 3
+    fifteenthMoveCol2 = 1
     
     arr35 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 1, 0],
@@ -684,6 +714,8 @@ def main():
             ]
     sixteenthMoveRow = 1
     sixteenthMoveCol = 7
+    sixteenthMoveRow2 = 2
+    sixteenthMoveCol2 = 7
 
     arr37 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 1, 0],
@@ -719,6 +751,8 @@ def main():
     seventeenthMoveCol = 0
     seventeenthMoveRow2 = 3
     seventeenthMoveCol2 = 1
+    seventeenthMoveRow3 = 8
+    seventeenthMoveCol3 = 8
     
     arr40 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 0, 0],
@@ -741,6 +775,8 @@ def main():
             ]
     eighteenthMoveRow = 1
     eighteenthMoveCol = 6
+    eighteenthMoveRow2 = 2
+    eighteenthMoveCol2 = 6
 
     arr42 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 0, 1, 1, 1, 1, 0, 0],
@@ -775,6 +811,8 @@ def main():
     nineteenthMoveCol = 1
     nineteenthMoveRow2 = 2
     nineteenthMoveCol2 = 0
+    nineteenthMoveRow3 = 8
+    nineteenthMoveCol3 = 8
     
     arr45 = [[1, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 0, 0],
@@ -810,6 +848,8 @@ def main():
     twentiethMoveCol = 4
     twentiethMoveRow2 = 2
     twentiethMoveCol2 = 5
+    twentiethMoveRow3 = 8
+    twentiethMoveCol3 = 8
     
     arr48 = [[0, 0, 1, 1, 0, 1, 1, 0],
             [0, 1, 1, 1, 1, 1, 0, 0],
@@ -845,12 +885,14 @@ def main():
     twentyFirstMoveCol = 0
     twentyFirstMoveRow2 = 1
     twentyFirstMoveCol2 = 1
+    twentyFirstMoveRow3 = 8
+    twentyFirstMoveCol3 = 8
 
 
     #start a game:
     board = chess.Board()
 
-    currSquare, newSquare = pieceMoved(initialPosition, 6, 4, arr2)
+    currSquare, newSquare = pieceMoved(initialPosition, 6, 4, firstMoveRow2, firstMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
@@ -860,43 +902,43 @@ def main():
     # print(newSquare)
     # printPos(initialPosition)
 
-    currSquare, newSquare = pieceMoved(initialPosition, secondMoveRow, secondMoveCol, arr4)
+    currSquare, newSquare = pieceMoved(initialPosition, secondMoveRow, secondMoveCol, secondMoveRow2, secondMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, thirdMoveRow, thirdMoveCol, arr6)
+    currSquare, newSquare = pieceMoved(initialPosition, thirdMoveRow, thirdMoveCol, thirdMoveRow2, thirdMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, fourthMoveRow, fourthMoveCol, arr8)
+    currSquare, newSquare = pieceMoved(initialPosition, fourthMoveRow, fourthMoveCol, fourthMoveRow2, fourthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, fifthMoveRow, fifthMoveCol, fifthMoveRow2, fifthMoveCol2, arr11)
+    currSquare, newSquare = takenPiece(board, initialPosition, fifthMoveRow, fifthMoveCol, fifthMoveRow2, fifthMoveCol2, fifthMoveRow3, fifthMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, sixthMoveRow, sixthMoveCol, sixthMoveRow2, sixthMoveCol2, arr14)
+    currSquare, newSquare = takenPiece(board, initialPosition, sixthMoveRow, sixthMoveCol, sixthMoveRow2, sixthMoveCol2, sixthMoveRow3, sixthMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, seventhMoveRow, seventhMoveCol, arr16)
+    currSquare, newSquare = pieceMoved(initialPosition, seventhMoveRow, seventhMoveCol, seventhMoveRow2, seventhMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, eighthMoveRow, eighthMoveCol, arr18)
+    currSquare, newSquare = pieceMoved(initialPosition, eighthMoveRow, eighthMoveCol, eighthMoveRow2, eighthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
@@ -904,80 +946,80 @@ def main():
 
     # piecePossibleMoves(board, 7, 4)
 
-    currSquare, newSquare = takenPiece(board, initialPosition, ninethMoveRow, ninethMoveCol, ninethMoveRow2, ninethMoveCol2, arr21)
+    currSquare, newSquare = takenPiece(board, initialPosition, ninethMoveRow, ninethMoveCol, ninethMoveRow2, ninethMoveCol2, ninethMoveRow3, ninethMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, tenthMoveRow, tenthMoveCol, arr23)
+    currSquare, newSquare = pieceMoved(initialPosition, tenthMoveRow, tenthMoveCol, tenthMoveRow2, tenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, eleventhMoveRow, eleventhMoveCol, arr25)
+    currSquare, newSquare = pieceMoved(initialPosition, eleventhMoveRow, eleventhMoveCol, eleventhMoveRow2, eleventhMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, twelfthMoveRow, twelfthMoveCol, twelfthMoveRow2, twelfthMoveCol2, arr28)
+    currSquare, newSquare = takenPiece(board, initialPosition, twelfthMoveRow, twelfthMoveCol, twelfthMoveRow2, twelfthMoveCol2, twelfthMoveRow3, twelfthMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, thirteenthMoveRow, thirteenthMoveCol, arr30)
+    currSquare, newSquare = pieceMoved(initialPosition, thirteenthMoveRow, thirteenthMoveCol, thirteenthMoveRow2, thirteenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, fourteenthMoveRow, fourteenthMoveCol, arr32)
+    currSquare, newSquare = pieceMoved(initialPosition, fourteenthMoveRow, fourteenthMoveCol, fourteenthMoveRow2, fourteenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, fifteenthMoveRow, fifteenthMoveCol, arr34)
+    currSquare, newSquare = pieceMoved(initialPosition, fifteenthMoveRow, fifteenthMoveCol, fifteenthMoveRow2, fifteenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, sixteenthMoveRow, sixteenthMoveCol, arr36)
+    currSquare, newSquare = pieceMoved(initialPosition, sixteenthMoveRow, sixteenthMoveCol, sixteenthMoveRow2, sixteenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, seventeenthMoveRow, seventeenthMoveCol, seventeenthMoveRow2, seventeenthMoveCol2, arr39)
+    currSquare, newSquare = takenPiece(board, initialPosition, seventeenthMoveRow, seventeenthMoveCol, seventeenthMoveRow2, seventeenthMoveCol2, seventeenthMoveRow3, seventeenthMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(initialPosition, eighteenthMoveRow, eighteenthMoveCol, arr41)
+    currSquare, newSquare = pieceMoved(initialPosition, eighteenthMoveRow, eighteenthMoveCol, eighteenthMoveRow2, eighteenthMoveCol2)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
     piecePossibleMoves(board, 6, 4)
 
-    currSquare, newSquare = takenPiece(board, initialPosition, nineteenthMoveRow, nineteenthMoveCol, nineteenthMoveRow2, nineteenthMoveCol2, arr44)
+    currSquare, newSquare = takenPiece(board, initialPosition, nineteenthMoveRow, nineteenthMoveCol, nineteenthMoveRow2, nineteenthMoveCol2, nineteenthMoveRow3, nineteenthMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, twentiethMoveRow, twentiethMoveCol, twentiethMoveRow2, twentiethMoveCol2, arr47)
+    currSquare, newSquare = takenPiece(board, initialPosition, twentiethMoveRow, twentiethMoveCol, twentiethMoveRow2, twentiethMoveCol2, twentiethMoveRow3, twentiethMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board, initialPosition, twentyFirstMoveRow, twentyFirstMoveCol, twentyFirstMoveRow2, twentyFirstMoveCol2, arr50)
+    currSquare, newSquare = takenPiece(board, initialPosition, twentyFirstMoveRow, twentyFirstMoveCol, twentyFirstMoveRow2, twentyFirstMoveCol2, twentyFirstMoveRow3, twentyFirstMoveCol3)
     moveStr = currSquare + newSquare
     board.push_uci(moveStr)
     print(board)
@@ -1018,6 +1060,8 @@ def main():
     
     firstMoveRow = 7
     firstMoveCol = 1
+    firstMoveRow2 = 5
+    firstMoveCol2 = 2
     
     arr3 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1041,6 +1085,8 @@ def main():
 
     secondMoveRow = 0
     secondMoveCol = 1
+    secondMoveRow2 = 2
+    secondMoveCol2 = 2
     
     arr5 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1064,6 +1110,8 @@ def main():
 
     thirdMoveRow = 6
     thirdMoveCol = 1
+    thirdMoveRow2 = 5
+    thirdMoveCol2 = 1
     
     arr7 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 0, 1, 1, 1, 1, 1, 1],
@@ -1087,6 +1135,8 @@ def main():
 
     fourthMoveRow = 1
     fourthMoveCol = 1
+    fourthMoveRow2 = 2
+    fourthMoveCol2 = 1
     
     arr9 = [[1, 0, 1, 1, 1, 1, 1, 1],
             [1, 0, 1, 1, 1, 1, 1, 1],
@@ -1110,6 +1160,8 @@ def main():
 
     fifthMoveRow = 7
     fifthMoveCol = 2
+    fifthMoveRow2 = 6
+    fifthMoveCol2 = 1
     
     arr11 = [[1, 0, 0, 1, 1, 1, 1, 1],
             [1, 0, 1, 1, 1, 1, 1, 1],
@@ -1133,6 +1185,8 @@ def main():
 
     sixthMoveRow = 0
     sixthMoveCol = 2
+    sixthMoveRow2 = 1
+    sixthMoveCol2 = 1
     
     arr13 = [[1, 0, 0, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1155,6 +1209,8 @@ def main():
             ]
     seventhMoveRow = 6
     seventhMoveCol = 3
+    seventhMoveRow2 = 5
+    seventhMoveCol2 = 3
     
     arr15 = [[1, 0, 0, 1, 1, 1, 1, 1],
             [1, 1, 1, 0, 1, 1, 1, 1],
@@ -1177,6 +1233,8 @@ def main():
             ]
     eighthMoveRow = 1
     eighthMoveCol = 3
+    eighthMoveRow2 = 2
+    eighthMoveCol2 = 3
     
     arr17 = [[1, 0, 0, 1, 1, 1, 1, 1],
             [1, 1, 1, 0, 1, 1, 1, 1],
@@ -1199,6 +1257,8 @@ def main():
             ]
     ninethMoveRow = 7
     ninethMoveCol = 3
+    ninethMoveRow2 = 6
+    ninethMoveCol2 = 3
     
     arr19 = [[1, 0, 0, 0, 1, 1, 1, 1],
             [1, 1, 1, 0, 1, 1, 1, 1],
@@ -1221,6 +1281,8 @@ def main():
             ]
     tenthMoveRow = 0
     tenthMoveCol = 3
+    tenthMoveRow2 = 1
+    tenthMoveCol2 = 3
     
     arr22 = [[1, 0, 0, 0, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1256,6 +1318,8 @@ def main():
     eleventhMoveCol = 0
     eleventhMoveRow2 = 7
     eleventhMoveCol2 = 4
+    eleventhMoveRow3 = 8
+    eleventhMoveCol3 = 8
     
     arr24 = [[1, 0, 0, 0, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1290,6 +1354,8 @@ def main():
     twelfthMoveCol = 4
     twelfthMoveRow2 = 0
     twelfthMoveCol2 = 0
+    twelfthMoveRow3 = 8
+    twelfthMoveCol3 = 8
     
     arr27 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1312,6 +1378,8 @@ def main():
             ]
     thirteenthMoveRow = 5
     thirteenthMoveCol = 1
+    thirteenthMoveRow2 = 4
+    thirteenthMoveCol2 = 1
     
     arr29 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1334,6 +1402,8 @@ def main():
             ]
     fourteenthMoveRow = 2
     fourteenthMoveCol = 2
+    fourteenthMoveRow2 = 3
+    fourteenthMoveCol2 = 4
     
     arr31 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1356,6 +1426,8 @@ def main():
             ]
     fifteenthMoveRow = 4
     fifteenthMoveCol = 1
+    fifteenthMoveRow2 = 3
+    fifteenthMoveCol2 = 1
     
     arr33 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 1, 1],
@@ -1378,6 +1450,8 @@ def main():
             ]
     sixteenthMoveRow = 1
     sixteenthMoveCol = 0
+    sixteenthMoveRow2 = 3
+    sixteenthMoveCol2 = 0
     
     arr36 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 1, 1],
@@ -1410,8 +1484,10 @@ def main():
             ]
     seventeenthMoveRow = 3
     seventeenthMoveCol = 1
-    seventeenthMoveRow = 3
-    seventeenthMoveCol = 0
+    seventeenthMoveRow2 = 3
+    seventeenthMoveCol2 = 0
+    seventeenthMoveRow3 = 2
+    seventeenthMoveCol3 = 0
     
     arr38 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 0, 1],
@@ -1435,6 +1511,8 @@ def main():
 
     eighteenthMoveRow = 1
     eighteenthMoveCol = 6
+    eighteenthMoveRow2 = 3
+    eighteenthMoveCol2 = 6
     
     arr40 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 0, 1],
@@ -1457,6 +1535,8 @@ def main():
             ]
     nineteenthMoveRow = 2
     nineteenthMoveCol = 0
+    nineteenthMoveRow2 = 1
+    nineteenthMoveCol2 = 0
     
     arr42 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 0, 1],
@@ -1479,6 +1559,8 @@ def main():
             ]
     twentiethMoveRow = 3
     twentiethMoveCol = 6
+    twentiethMoveRow2 = 4
+    twentiethMoveCol2 = 6
     
     arr44 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 0, 1],
@@ -1501,6 +1583,8 @@ def main():
             ]
     twentyFirstMoveRow = 6
     twentyFirstMoveCol = 5
+    twentyFirstMoveRow2 = 4
+    twentyFirstMoveCol2 = 5
     
     arr47 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 0, 1],
@@ -1535,6 +1619,8 @@ def main():
     twentySecondMoveCol = 5
     twentySecondMoveRow2 = 4
     twentySecondMoveCol2 = 6
+    twentySecondMoveRow3 = 5
+    twentySecondMoveCol3 = 5
     
     arr49 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 0, 1],
@@ -1557,6 +1643,8 @@ def main():
             ]
     twentyThirdMoveRow = 1
     twentyThirdMoveCol = 0
+    twentyThirdMoveRow2 = 0
+    twentyThirdMoveCol2 = 0
     
     arr51 = [[0, 0, 1, 1, 0, 1, 1, 1],
             [0, 1, 1, 1, 1, 1, 0, 1],
@@ -1592,6 +1680,8 @@ def main():
     twentyFourthMoveCol = 0
     twentyFourthMoveRow2 = 1
     twentyFourthMoveCol2 = 1
+    twentyFourthMoveRow3 = 8
+    twentyFourthMoveCol3 = 8
     
     arr54 = [[1, 0, 1, 1, 0, 1, 1, 1],
             [0, 0, 1, 1, 1, 1, 0, 1],
@@ -1614,6 +1704,8 @@ def main():
             ]
     twentyFifthMoveRow = 6
     twentyFifthMoveCol = 0
+    twentyFifthMoveRow2 = 5
+    twentyFifthMoveCol2 = 0
     
     arr56 = [[1, 0, 1, 1, 0, 1, 1, 1],
             [0, 0, 1, 1, 1, 1, 0, 1],
@@ -1648,6 +1740,8 @@ def main():
     twentySixthMoveCol = 6
     twentySixthMoveRow2 = 5
     twentySixthMoveCol2 = 5
+    twentySixthMoveRow3 = 8
+    twentySixthMoveCol3 = 8
     
     arr59 = [[1, 0, 1, 1, 0, 1, 1, 1],
             [0, 0, 1, 1, 1, 1, 0, 1],
@@ -1670,6 +1764,8 @@ def main():
             ]
     twentySeventhMoveRow = 5
     twentySeventhMoveCol = 2
+    twentySeventhMoveRow2 = 3
+    twentySeventhMoveCol2 = 3
     
     arr61 = [[1, 0, 1, 1, 0, 1, 1, 1],
             [0, 0, 1, 1, 1, 1, 0, 1],
@@ -1705,187 +1801,189 @@ def main():
     twentyEighthMoveCol = 6
     twentyEighthMoveRow2 = 7
     twentyEighthMoveCol2 = 7
+    twentyEighthMoveRow3 = 8
+    twentyEighthMoveCol3 = 8
     
 
     
-    currSquare, newSquare = pieceMoved(newInitialPosition, firstMoveRow, firstMoveCol, arr2)
+    currSquare, newSquare = pieceMoved(newInitialPosition, firstMoveRow, firstMoveCol, firstMoveRow2, firstMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, secondMoveRow, secondMoveCol, arr4)
+    currSquare, newSquare = pieceMoved(newInitialPosition, secondMoveRow, secondMoveCol, secondMoveRow2, secondMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, thirdMoveRow, thirdMoveCol, arr6)
+    currSquare, newSquare = pieceMoved(newInitialPosition, thirdMoveRow, thirdMoveCol, thirdMoveRow2, thirdMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, fourthMoveRow, fourthMoveCol, arr8)
+    currSquare, newSquare = pieceMoved(newInitialPosition, fourthMoveRow, fourthMoveCol, fourthMoveRow2, fourthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, fifthMoveRow, fifthMoveCol, arr10)
+    currSquare, newSquare = pieceMoved(newInitialPosition, fifthMoveRow, fifthMoveCol, fifthMoveRow2, fifthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, sixthMoveRow, sixthMoveCol, arr12)
+    currSquare, newSquare = pieceMoved(newInitialPosition, sixthMoveRow, sixthMoveCol, sixthMoveRow2, sixthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, seventhMoveRow, seventhMoveCol, arr14)
+    currSquare, newSquare = pieceMoved(newInitialPosition, seventhMoveRow, seventhMoveCol, seventhMoveRow2, seventhMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, eighthMoveRow, eighthMoveCol, arr16)
+    currSquare, newSquare = pieceMoved(newInitialPosition, eighthMoveRow, eighthMoveCol, eighthMoveRow2, eighthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, ninethMoveRow, ninethMoveCol, arr18)
+    currSquare, newSquare = pieceMoved(newInitialPosition, ninethMoveRow, ninethMoveCol, ninethMoveRow2, ninethMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, tenthMoveRow, tenthMoveCol, arr20)
+    currSquare, newSquare = pieceMoved(newInitialPosition, tenthMoveRow, tenthMoveCol, tenthMoveRow2, tenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, eleventhMoveRow, eleventhMoveCol, eleventhMoveRow2, eleventhMoveCol2, arr23)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, eleventhMoveRow, eleventhMoveCol, eleventhMoveRow2, eleventhMoveCol2, eleventhMoveRow3, eleventhMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, twelfthMoveRow, twelfthMoveCol, twelfthMoveRow2, twelfthMoveCol2, arr26)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, twelfthMoveRow, twelfthMoveCol, twelfthMoveRow2, twelfthMoveCol2, twelfthMoveRow3, twelfthMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, thirteenthMoveRow, thirteenthMoveCol, arr28)
+    currSquare, newSquare = pieceMoved(newInitialPosition, thirteenthMoveRow, thirteenthMoveCol, thirteenthMoveRow2, thirteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, fourteenthMoveRow, fourteenthMoveCol, arr30)
+    currSquare, newSquare = pieceMoved(newInitialPosition, fourteenthMoveRow, fourteenthMoveCol, fourteenthMoveRow2, fourteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, fifteenthMoveRow, fifteenthMoveCol, arr32)
+    currSquare, newSquare = pieceMoved(newInitialPosition, fifteenthMoveRow, fifteenthMoveCol, fifteenthMoveRow2, fifteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print(newInitialPosition)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, sixteenthMoveRow, sixteenthMoveCol, arr34)
+    currSquare, newSquare = pieceMoved(newInitialPosition, sixteenthMoveRow, sixteenthMoveCol, sixteenthMoveRow2, sixteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, seventeenthMoveRow, seventeenthMoveCol, seventeenthMoveRow2, seventeenthMoveCol2, arr37)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, seventeenthMoveRow, seventeenthMoveCol, seventeenthMoveRow2, seventeenthMoveCol2, seventeenthMoveRow3, seventeenthMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, eighteenthMoveRow, eighteenthMoveCol, arr39)
+    currSquare, newSquare = pieceMoved(newInitialPosition, eighteenthMoveRow, eighteenthMoveCol, eighteenthMoveRow2, eighteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, nineteenthMoveRow, nineteenthMoveCol, arr41)
+    currSquare, newSquare = pieceMoved(newInitialPosition, nineteenthMoveRow, nineteenthMoveCol, nineteenthMoveRow2, nineteenthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, twentiethMoveRow, twentiethMoveCol, arr43)
+    currSquare, newSquare = pieceMoved(newInitialPosition, twentiethMoveRow, twentiethMoveCol, twentiethMoveRow2, twentiethMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, twentyFirstMoveRow, twentyFirstMoveCol, arr45)
+    currSquare, newSquare = pieceMoved(newInitialPosition, twentyFirstMoveRow, twentyFirstMoveCol, twentyFirstMoveRow2, twentyFirstMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentySecondMoveRow, twentySecondMoveCol, twentySecondMoveRow2, twentySecondMoveCol2, arr48)
-    moveStr = currSquare + newSquare
-    board2.push_uci(moveStr)
-    print(board2)
-    print('\n')
-    
-    currSquare, newSquare = pieceMoved(newInitialPosition, twentyThirdMoveRow, twentyThirdMoveCol, arr50)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentySecondMoveRow, twentySecondMoveCol, twentySecondMoveRow2, twentySecondMoveCol2, twentySecondMoveRow3, twentySecondMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
     
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentyFourthMoveRow, twentyFourthMoveCol, twentyFourthMoveRow2, twentyFourthMoveCol2, arr53)
+    currSquare, newSquare = pieceMoved(newInitialPosition, twentyThirdMoveRow, twentyThirdMoveCol, twentyThirdMoveRow2, twentyThirdMoveCol2)
+    moveStr = currSquare + newSquare
+    board2.push_uci(moveStr)
+    print(board2)
+    print('\n')
+    
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentyFourthMoveRow, twentyFourthMoveCol, twentyFourthMoveRow2, twentyFourthMoveCol2, twentyFourthMoveRow3, twentyFourthMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, twentyFifthMoveRow, twentyFifthMoveCol, arr55)
+    currSquare, newSquare = pieceMoved(newInitialPosition, twentyFifthMoveRow, twentyFifthMoveCol, twentyFifthMoveRow2, twentyFifthMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentySixthMoveRow, twentySixthMoveCol, twentySixthMoveRow2, twentySixthMoveCol2, arr58)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentySixthMoveRow, twentySixthMoveCol, twentySixthMoveRow2, twentySixthMoveCol2, twentySixthMoveRow3, twentySixthMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = pieceMoved(newInitialPosition, twentySeventhMoveRow, twentySeventhMoveCol, arr60)
+    currSquare, newSquare = pieceMoved(newInitialPosition, twentySeventhMoveRow, twentySeventhMoveCol, twentySeventhMoveRow2, twentySeventhMoveCol2)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
     print('\n')
 
-    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentyEighthMoveRow, twentyEighthMoveCol, twentyEighthMoveRow2, twentyEighthMoveCol2, arr63)
+    currSquare, newSquare = takenPiece(board2, newInitialPosition, twentyEighthMoveRow, twentyEighthMoveCol, twentyEighthMoveRow2, twentyEighthMoveCol2, twentyEighthMoveRow3, twentyEighthMoveCol3)
     moveStr = currSquare + newSquare
     board2.push_uci(moveStr)
     print(board2)
