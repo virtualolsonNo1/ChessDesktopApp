@@ -49,6 +49,16 @@ initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
 			['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
 			]
 
+initialPositionCopy = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+			['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+			['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+			]
+
 lastPosition = None
 
 #TODO: PLAN!!!!!
@@ -215,9 +225,10 @@ def main():
         while True:
             try:
                 # Read the report
-                data = h.read(7, timeout_ms=1000)  # Adjust size if needed
+                data = h.read(7)  # Adjust size if needed
                 if data:
                     report_id = data[0]
+                    print(f"REPORT ID: {report_id}")
                     if report_id == 1:
                         report1 = HIDClockModeReports.from_bytes(data)
                         print(report1)
@@ -234,6 +245,10 @@ def main():
                         board.push_uci(moveStr)
                         print(board)
                         print('\n')
+                    elif report_id == 3:
+                        board.reset()
+                        initialPosition = copy.deepcopy(initialPositionCopy)
+                        print("RESET GAME")
                     else:
                         print(f"Unknown Report ID: {report_id}")
                 time.sleep(0.1)  # Small delay to prevent tight looping
