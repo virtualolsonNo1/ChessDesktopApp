@@ -56,7 +56,17 @@ def piecePossibleMoves(board, pieceI, pieceJ):
     printPos(empty_board)
     return empty_board
             
-
+def convert_2d_to_1d_bitarray(array_2d):
+    result = []
+    
+    for row in array_2d:
+        byte = 0
+        # Combine the bits into a single byte
+        for i in range(8):
+            byte = (byte << 1) | (row[i] & 1)  # Shift left and OR the next bit (ensure only the last bit of the value is used)
+        result.append(byte)
+    
+    return result
 
 if __name__ == '__main__':
 

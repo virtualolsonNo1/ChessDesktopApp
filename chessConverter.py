@@ -2,7 +2,7 @@ import chess
 from chess import Board
 # import serial
 import copy
-from possibleMoves import piecePossibleMoves
+from possibleMoves import piecePossibleMoves, convert_2d_to_1d_bitarray
 import hid
 import time
 from hidFuncs import find_device, VENDOR_ID, PRODUCT_ID
@@ -246,9 +246,26 @@ def main():
                         print(board)
                         print('\n')
                     elif report_id == 3:
-                        board.reset()
-                        initialPosition = copy.deepcopy(initialPositionCopy)
-                        print("RESET GAME")
+                        if (data[1] == 0):
+                            board.reset()
+                            initialPosition = copy.deepcopy(initialPositionCopy)
+                            print("RESET GAME")
+                        else: 
+                            pieceI = data[1] >> 3
+                            pieceJ = data[1] & 0x7
+                            print("LIGHTS")
+                            lights = piecePossibleMoves(board, pieceI, pieceJ)
+                            # lights = convert_2d_to_1d_bitarray(lights)
+                            # print(lights)
+                            # lights.insert(0, 3)
+                            flattened_array = [item for sublist in lights for item in sublist]
+                            flattened_array.insert(0, 4)
+                            # lights.insert(0, )
+                            bytes_written = h.write(flattened_array)
+                            print(f"Bytes Written: {bytes_written}")
+                            if bytes_written == -1:
+                                print("Error: Unable to write to device")
+                                print(f"Last error: {h.error()}")
                     else:
                         print(f"Unknown Report ID: {report_id}")
                 time.sleep(0.1)  # Small delay to prevent tight looping
