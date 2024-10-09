@@ -72,6 +72,7 @@ lastPosition = None
 #TODO: add ability to redo move if they send invalid move
 #TODO: add no clock mode where it sends move after opponent piece moves???????
 
+#TODO: Look into: SHORT PACKET TERMINATOR, WHAT IS REQUIRED IN REPORT, ETC
 
 #This one's a thiccy...
 def takenPiece(board, prevPosition, firstPickupRow, firstPickupCol, secondPickupRow, secondPickupCol, finalPickupRow, finalPickupCol):
@@ -260,6 +261,7 @@ def main():
                             # lights.insert(0, 3)
                             flattened_array = [item for sublist in lights for item in sublist]
                             flattened_array.insert(0, 4)
+                        #     flattened_array[64] = 1
                             # lights.insert(0, )
                             bytes_written = h.write(flattened_array)
                             print(f"Bytes Written: {bytes_written}")
