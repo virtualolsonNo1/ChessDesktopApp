@@ -238,6 +238,13 @@ def main():
                         board.push_uci(moveStr)
                         print(board)
                         print('\n')
+                        flattened_array = [item for sublist in initialPosition for item in sublist]
+                        flattened_array.insert(0, 5)
+                        byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                        bytes_written = h.write(byte_array)
+                        if bytes_written == -1:
+                            print("Error: Unable to write to device")
+                            print(f"Last error: {h.error()}")
                     elif report_id == 2:
                         report2 = HIDClockModeReports.from_bytes(data)
                         print(report2)  # 3 sets of pickup data
@@ -246,6 +253,13 @@ def main():
                         board.push_uci(moveStr)
                         print(board)
                         print('\n')
+                        flattened_array = [item for sublist in initialPosition for item in sublist]
+                        flattened_array.insert(0, 5)
+                        byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                        bytes_written = h.write(byte_array)
+                        if bytes_written == -1:
+                            print("Error: Unable to write to device")
+                            print(f"Last error: {h.error()}")
                     elif report_id == 3:
                         if (data[1] == 0):
                             board.reset()
