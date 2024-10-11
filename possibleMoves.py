@@ -38,7 +38,7 @@ def piecePossibleMoves(board, pieceI, pieceJ):
 
     legal_moves = list(board.legal_moves)
     valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.from_square)]
-    print(valid_moves)
+    # print(valid_moves)
     empty_board = [
         [0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -53,7 +53,7 @@ def piecePossibleMoves(board, pieceI, pieceJ):
     for move in valid_moves:
         empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 1
 
-    printPos(empty_board)
+    # printPos(empty_board)
     return empty_board
             
 def convert_2d_to_1d_bitarray(array_2d):

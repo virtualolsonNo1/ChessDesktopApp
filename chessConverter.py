@@ -212,82 +212,81 @@ def main():
         return
 
     try:
-        h = hid.device()
-        h.open(VENDOR_ID, PRODUCT_ID)
-        
-        print(f"Opened device: {h.get_manufacturer_string()} {h.get_product_string()}")
-        
-
-        #TODO: MAKE REPORT TO RESTART GAME????????????????????????????????????????????????????????!!!!!!!!!!!!!!!!!!!!!!!
-        #start a game:
-        board = chess.Board()
-
-        
         while True:
             try:
-                # Read the report
-                data = h.read(7)  # Adjust size if needed
-                if data:
-                    report_id = data[0]
-                    print(f"REPORT ID: {report_id}")
-                    if report_id == 1:
-                        report1 = HIDClockModeReports.from_bytes(data)
-                        print(report1)
-                        currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
-                        moveStr = currSquare + newSquare
-                        board.push_uci(moveStr)
-                        print(board)
-                        print('\n')
-                        flattened_array = [item for sublist in initialPosition for item in sublist]
-                        flattened_array.insert(0, 5)
-                        byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                        bytes_written = h.write(byte_array)
-                        if bytes_written == -1:
-                            print("Error: Unable to write to device")
-                            print(f"Last error: {h.error()}")
-                    elif report_id == 2:
-                        report2 = HIDClockModeReports.from_bytes(data)
-                        print(report2)  # 3 sets of pickup data
-                        currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
-                        moveStr = currSquare + newSquare
-                        board.push_uci(moveStr)
-                        print(board)
-                        print('\n')
-                        flattened_array = [item for sublist in initialPosition for item in sublist]
-                        flattened_array.insert(0, 5)
-                        byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                        bytes_written = h.write(byte_array)
-                        if bytes_written == -1:
-                            print("Error: Unable to write to device")
-                            print(f"Last error: {h.error()}")
-                    elif report_id == 3:
-                        if (data[1] == 0):
-                            board.reset()
-                            initialPosition = copy.deepcopy(initialPositionCopy)
-                            print("RESET GAME")
-                        else: 
-                            pieceI = data[1] >> 3
-                            pieceJ = data[1] & 0x7
-                            print("LIGHTS")
-                            lights = piecePossibleMoves(board, pieceI, pieceJ)
-                            # lights = convert_2d_to_1d_bitarray(lights)
-                            # print(lights)
-                            # lights.insert(0, 3)
-                            flattened_array = [item for sublist in lights for item in sublist]
-                            flattened_array.insert(0, 4)
-                        #     flattened_array[64] = 1
-                            # lights.insert(0, )
-                            bytes_written = h.write(flattened_array)
-                            print(f"Bytes Written: {bytes_written}")
-                            if bytes_written == -1:
-                                print("Error: Unable to write to device")
-                                print(f"Last error: {h.error()}")
-                    else:
-                        print(f"Unknown Report ID: {report_id}")
-                time.sleep(0.1)  # Small delay to prevent tight looping
+                h = hid.device()
+                h.open(VENDOR_ID, PRODUCT_ID)
+                
+                print(f"Opened device: {h.get_manufacturer_string()} {h.get_product_string()}")
+                
+
+                #start a game:
+                board = chess.Board()
+
+                while True:
+                    try:
+                        # Read the report
+                        data = h.read(7)  # Adjust size if needed
+                        if data:
+                            report_id = data[0]
+                            print(f"REPORT ID: {report_id}")
+                            if report_id == 1:
+                                report1 = HIDClockModeReports.from_bytes(data)
+                                print(report1)
+                                currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                                print('\n')
+                                flattened_array = [item for sublist in initialPosition for item in sublist]
+                                flattened_array.insert(0, 5)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                bytes_written = h.write(byte_array)
+                                if bytes_written == -1:
+                                    print("Error: Unable to write to device")
+                                    print(f"Last error: {h.error()}")
+                            elif report_id == 2:
+                                report2 = HIDClockModeReports.from_bytes(data)
+                                print(report2)  # 3 sets of pickup data
+                                currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                                print('\n')
+                                flattened_array = [item for sublist in initialPosition for item in sublist]
+                                flattened_array.insert(0, 5)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                bytes_written = h.write(byte_array)
+                                if bytes_written == -1:
+                                    print("Error: Unable to write to device")
+                                    print(f"Last error: {h.error()}")
+                            elif report_id == 3:
+                                if (data[1] == 0):
+                                    board.reset()
+                                    initialPosition = copy.deepcopy(initialPositionCopy)
+                                    print("RESET GAME")
+                                else: 
+                                    pieceI = data[1] >> 3
+                                    pieceJ = data[1] & 0x7
+                                    print("LIGHTS")
+                                    lights = piecePossibleMoves(board, pieceI, pieceJ)
+                                    flattened_array = [item for sublist in lights for item in sublist]
+                                    flattened_array.insert(0, 4)
+                                    bytes_written = h.write(flattened_array)
+                                    print(f"Bytes Written: {bytes_written}")
+                                    if bytes_written == -1:
+                                        print("Error: Unable to write to device")
+                                        print(f"Last error: {h.error()}")
+                            else:
+                                print(f"Unknown Report ID: {report_id}")
+                        time.sleep(0.1)  # Small delay to prevent tight looping
+                    except IOError as e:
+                        print(f"IOError: {str(e)}")
+                        break
             except IOError as e:
-                print(f"IOError: {str(e)}")
-                time.sleep(1)  # Wait a bit before retrying
+                print(f"Failed to connect to the device: {str(e)}")
+                print("Retrying in 5 seconds...")
+                time.sleep(5)
     except IOError as e:
         print(f"Unable to open device: {str(e)}")
     finally:
