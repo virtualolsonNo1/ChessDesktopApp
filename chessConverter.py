@@ -261,7 +261,7 @@ def main():
                                     print("Error: Unable to write to device")
                                     print(f"Last error: {h.error()}")
                             elif report_id == 3:
-                                if (data[1] == 0):
+                                if (data[1] == 255):
                                     board.reset()
                                     initialPosition = copy.deepcopy(initialPositionCopy)
                                     print("RESET GAME")
