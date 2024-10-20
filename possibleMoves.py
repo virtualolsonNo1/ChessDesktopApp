@@ -1,4 +1,5 @@
 import chess
+from chessConverter import initialPosition
 
 def printPos(position):
     for p in position:
@@ -7,15 +8,15 @@ def printPos(position):
         print("\n")
 
 
-initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
-            ]
+# initialPosition = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+#             ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+#             [0, 0, 0, 0, 0, 0, 0, 0],
+#             [0, 0, 0, 0, 0, 0, 0, 0],
+#             [0, 0, 0, 0, 0, 0, 0, 0],
+#             [0, 0, 0, 0, 0, 0, 0, 0],
+#             ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+#             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+#             ]
 
 ledState = [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -32,13 +33,16 @@ def piecePossibleMoves(board, pieceI, pieceJ):
     file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     pieceSquare = file[pieceJ] + str(8 - pieceI)
 
-
-
-
-
     legal_moves = list(board.legal_moves)
-    valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.from_square)]
-    # print(valid_moves)
+
+    if (board.turn == chess.WHITE and initialPosition[pieceI][pieceJ].isupper() or board.turn == chess.BLACK and initialPosition[pieceI][pieceJ].islower()):
+        isPlayersPiece = True
+        valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.from_square)]
+    else:
+        isPlayersPiece = False
+        valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.to_square)]
+    
+    print(valid_moves)
     empty_board = [
         [0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -51,7 +55,11 @@ def piecePossibleMoves(board, pieceI, pieceJ):
         ]
     
     for move in valid_moves:
-        empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 1
+        if isPlayersPiece == True:
+            empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 1
+        else:
+            empty_board[7 - chess.square_rank(move.from_square)][chess.square_file(move.from_square)] = 1
+            
 
     # printPos(empty_board)
     return empty_board

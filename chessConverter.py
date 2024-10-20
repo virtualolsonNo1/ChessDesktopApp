@@ -2,7 +2,6 @@ import chess
 from chess import Board
 # import serial
 import copy
-from possibleMoves import piecePossibleMoves, convert_2d_to_1d_bitarray
 import hid
 import time
 from hidFuncs import find_device, VENDOR_ID, PRODUCT_ID
@@ -60,6 +59,54 @@ initialPositionCopy = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
 			]
 
 lastPosition = None
+
+
+def piecePossibleMoves(board, pieceI, pieceJ):
+    file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    pieceSquare = file[pieceJ] + str(8 - pieceI)
+
+    legal_moves = list(board.legal_moves)
+
+    if (board.turn == chess.WHITE and initialPosition[pieceI][pieceJ].isupper() or board.turn == chess.BLACK and initialPosition[pieceI][pieceJ].islower()):
+        isPlayersPiece = True
+        valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.from_square)]
+    else:
+        isPlayersPiece = False
+        valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.to_square)]
+    
+    print(valid_moves)
+    empty_board = [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+    
+    for move in valid_moves:
+        if isPlayersPiece == True:
+            empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 1
+        else:
+            empty_board[7 - chess.square_rank(move.from_square)][chess.square_file(move.from_square)] = 1
+            
+
+    # printPos(empty_board)
+    return empty_board
+            
+def convert_2d_to_1d_bitarray(array_2d):
+    result = []
+    
+    for row in array_2d:
+        byte = 0
+        # Combine the bits into a single byte
+        for i in range(8):
+            byte = (byte << 1) | (row[i] & 1)  # Shift left and OR the next bit (ensure only the last bit of the value is used)
+        result.append(byte)
+    
+    return result
 
 #TODO: PLAN!!!!!
 #   - get rid of secondPickupArr and thirdPickupArr
