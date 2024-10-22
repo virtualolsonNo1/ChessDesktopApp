@@ -6,6 +6,7 @@ import hid
 import time
 from hidFuncs import find_device, VENDOR_ID, PRODUCT_ID
 import struct
+from analysis import open_game_in_chesscom
 
 class HIDClockModeReports:
     def __init__(self):
@@ -282,33 +283,47 @@ def main():
                                 print(report1)
                                 currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
                                 moveStr = currSquare + newSquare
-                                board.push_uci(moveStr)
-                                print(board)
-                                print('\n')
-                                flattened_array = [item for sublist in initialPosition for item in sublist]
-                                flattened_array.insert(0, 5)
-                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                                bytes_written = h.write(byte_array)
-                                if bytes_written == -1:
-                                    print("Error: Unable to write to device")
-                                    print(f"Last error: {h.error()}")
+                                try:
+                                    board.push_uci(moveStr)
+                                    print(board)
+                                    print('\n')
+                                    flattened_array = [item for sublist in initialPosition for item in sublist]
+                                    flattened_array.insert(0, 5)
+                                    byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                    bytes_written = h.write(byte_array)
+                                    if bytes_written == -1:
+                                        print("Error: Unable to write to device")
+                                        print(f"Last error: {h.error()}")
+                                except chess.IllegalMoveError as e:
+                                    # TODO: SEND BACK BAD MOVE ERROR!!!!!!!!!!!!!!!!!
+                                    print(f"Error type: {type(e).__name__}")
+                                    print(f"Error message: {str(e)}")
+                                        
                             elif report_id == 2:
                                 report2 = HIDClockModeReports.from_bytes(data)
                                 print(report2)  # 3 sets of pickup data
                                 currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
                                 moveStr = currSquare + newSquare
-                                board.push_uci(moveStr)
-                                print(board)
-                                print('\n')
-                                flattened_array = [item for sublist in initialPosition for item in sublist]
-                                flattened_array.insert(0, 5)
-                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                                bytes_written = h.write(byte_array)
-                                if bytes_written == -1:
-                                    print("Error: Unable to write to device")
-                                    print(f"Last error: {h.error()}")
+                                try:
+                                    board.push_uci(moveStr)
+                                    print(board)
+                                    print('\n')
+                                    flattened_array = [item for sublist in initialPosition for item in sublist]
+                                    flattened_array.insert(0, 5)
+                                    byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                    bytes_written = h.write(byte_array)
+                                    if bytes_written == -1:
+                                        print("Error: Unable to write to device")
+                                        print(f"Last error: {h.error()}")
+                                except chess.IllegalMoveError as e:
+                                    # TODO: SEND BACK BAD MOVE ERROR!!!!!!!!!!!!!!!!!
+                                    print(f"Error type: {type(e).__name__}")
+                                    print(f"Error message: {str(e)}")
+                                    
                             elif report_id == 3:
                                 if (data[1] == 255):
+                                    # TODO: TEST THIS SHIT!!!!!!!!!!!!!!!!!!!!!!
+                                    open_game_in_chesscom(board)
                                     board.reset()
                                     initialPosition = copy.deepcopy(initialPositionCopy)
                                     print("RESET GAME")
