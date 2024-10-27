@@ -255,9 +255,10 @@ def main():
     global initialPosition
 
     device_info = find_device()
-    if not device_info:
+    while not device_info:
+        device_info = find_device()
         print(f"Device with VID:{VENDOR_ID:04x} and PID:{PRODUCT_ID:04x} not found")
-        return
+        time.sleep(1)
 
     try:
         while True:
@@ -278,12 +279,13 @@ def main():
                         if data:
                             report_id = data[0]
                             print(f"REPORT ID: {report_id}")
+                            prevPrevPosition = copy.deepcopy(initialPosition)
                             if report_id == 1:
                                 report1 = HIDClockModeReports.from_bytes(data)
                                 print(report1)
                                 currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
-                                moveStr = currSquare + newSquare
                                 try:
+                                    moveStr = currSquare + newSquare
                                     board.push_uci(moveStr)
                                     print(board)
                                     print('\n')
@@ -294,17 +296,20 @@ def main():
                                     if bytes_written == -1:
                                         print("Error: Unable to write to device")
                                         print(f"Last error: {h.error()}")
-                                except chess.IllegalMoveError as e:
-                                    # TODO: SEND BACK BAD MOVE ERROR!!!!!!!!!!!!!!!!!
-                                    print(f"Error type: {type(e).__name__}")
+                                except (chess.IllegalMoveError, TypeError, AttributeError) as e:
+                                    initialPosition = copy.deepcopy(prevPrevPosition)
+                                    bytes = [6, 255]
+                                    bytes_written = h.write(bytes)
+                                    # Catches errors that might occur during string concatenation
+                                    print(f"Error in move name: {type(e).__name__}")
                                     print(f"Error message: {str(e)}")
                                         
                             elif report_id == 2:
                                 report2 = HIDClockModeReports.from_bytes(data)
                                 print(report2)  # 3 sets of pickup data
                                 currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
-                                moveStr = currSquare + newSquare
                                 try:
+                                    moveStr = currSquare + newSquare
                                     board.push_uci(moveStr)
                                     print(board)
                                     print('\n')
@@ -315,9 +320,12 @@ def main():
                                     if bytes_written == -1:
                                         print("Error: Unable to write to device")
                                         print(f"Last error: {h.error()}")
-                                except chess.IllegalMoveError as e:
-                                    # TODO: SEND BACK BAD MOVE ERROR!!!!!!!!!!!!!!!!!
-                                    print(f"Error type: {type(e).__name__}")
+                                except (chess.IllegalMoveError, TypeError, AttributeError) as e:
+                                    initialPosition = copy.deepcopy(prevPrevPosition)
+                                    bytes = [6, 255]
+                                    bytes_written = h.write(bytes)
+                                    # Catches errors that might occur during string concatenation
+                                    print(f"Error in move name: {type(e).__name__}")
                                     print(f"Error message: {str(e)}")
                                     
                             elif report_id == 3:
