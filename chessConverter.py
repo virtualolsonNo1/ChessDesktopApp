@@ -61,6 +61,39 @@ initialPositionCopy = [['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
 
 lastPosition = None
 
+def can_be_taken_en_passant(board: chess.Board, square: chess.Square) -> bool:
+    """
+    Check if the pawn on the given square could be captured by en passant.
+    
+    Args:
+        board: A chess.Board instance representing the current position
+        square: The square to check (chess.Square)
+    
+    Returns:
+        bool: True if the pawn can be captured en passant, False otherwise
+    """
+    # First, check if there's actually a pawn on the square
+    piece = board.piece_at(square)
+    if piece is None or piece.piece_type != chess.PAWN:
+        return False
+    
+    # Check if the pawn is on the correct rank for en passant
+    rank = chess.square_rank(square)
+    if (piece.color == chess.WHITE and rank != 3) or \
+       (piece.color == chess.BLACK and rank != 4):
+        return False
+    
+    # Check if this pawn just moved two squares
+    # This can be verified by checking if the en passant square is adjacent
+    ep_square = board.ep_square
+    if ep_square is None:
+        return False
+    
+    # The en passant square must be directly behind the pawn
+    file = chess.square_file(square)
+    ep_file = chess.square_file(ep_square)
+    
+    return file == ep_file
 
 def piecePossibleMoves(board, pieceI, pieceJ):
     file = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -74,6 +107,19 @@ def piecePossibleMoves(board, pieceI, pieceJ):
     else:
         isPlayersPiece = False
         valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.to_square)]
+        # special handling for en passant
+        if board.ep_square is not None:
+            ep_square = chess.square_name(board.ep_square)
+            rank = 8 - pieceI
+            # For white's turn, the capturable pawn must be on rank 5
+            # For black's turn, the capturable pawn must be on rank 4
+            if ((board.turn == chess.WHITE and rank == 5) or 
+                (board.turn == chess.BLACK and rank == 4)):
+                # Find en passant moves where this pawn would be captured
+                ep_moves = [move for move in legal_moves 
+                          if board.is_en_passant(move) and 
+                          chess.square_name(move.to_square) == ep_square]
+                valid_moves.extend(ep_moves)
     
     print(valid_moves)
     empty_board = [
@@ -90,10 +136,37 @@ def piecePossibleMoves(board, pieceI, pieceJ):
     for move in valid_moves:
         if isPlayersPiece == True:
             empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 1
-        else:
-            empty_board[7 - chess.square_rank(move.from_square)][chess.square_file(move.from_square)] = 1
-            
 
+            # if en passant is possible and pawn taking is picked up, light up the pawn to be taken's square and the destination square
+            if board.is_en_passant(move):
+                if board.turn == chess.WHITE:
+                    empty_board[7 - chess.square_rank(move.to_square) + 1][chess.square_file(move.to_square)] = 1
+                else:
+                    empty_board[7 - chess.square_rank(move.to_square) - 1][chess.square_file(move.to_square)] = 1
+                    
+        else:
+            # if en passant is possible and pawn to be taken is pick up, light up the taking pawn's square and it's diagonal destination square
+            empty_board[7 - chess.square_rank(move.from_square)][chess.square_file(move.from_square)] = 1
+    
+
+    rank = 7 - pieceI
+    file = pieceJ
+    
+    move = chess.square(file, rank)
+    if len(valid_moves) == 0 and can_be_taken_en_passant(board, move):
+        # if en passant is possible and pawn to be taken is pick up, light up the taking pawn's square and it's diagonal destination square
+        empty_board[7 - rank][file] = 1
+        ep_square = board.ep_square
+        empty_board[7 - chess.square_rank(ep_square)][chess.square_file(ep_square)] = 1
+        if (file < 7 and ((initialPosition[7 - rank][file + 1] == 'P' and board.turn == chess.WHITE) or (initialPosition[7 - rank][file + 1] == 'p' and board.turn == chess.BLACK))):
+            empty_board[7 - rank][file + 1] = 1
+        if (file > 0 and ((initialPosition[7 - rank][file - 1] == 'P' and board.turn == chess.WHITE) or (initialPosition[7 - rank][file - 1] == 'p' and board.turn == chess.BLACK))):
+            empty_board[7 - rank][file - 1] = 1
+
+    # if no moves possible with that piece, return error
+    if len(valid_moves) == 0:  
+        raise chess.IllegalMoveError
+            
     # printPos(empty_board)
     return empty_board
             
@@ -260,6 +333,8 @@ def main():
         print(f"Device with VID:{VENDOR_ID:04x} and PID:{PRODUCT_ID:04x} not found")
         time.sleep(1)
 
+    board = chess.Board()
+
     try:
         while True:
             try:
@@ -270,93 +345,101 @@ def main():
                 
 
                 #start a game:
-                board = chess.Board()
 
                 while True:
-                    try:
-                        # Read the report
-                        data = h.read(7)  # Adjust size if needed
-                        if data:
-                            report_id = data[0]
-                            print(f"REPORT ID: {report_id}")
-                            prevPrevPosition = copy.deepcopy(initialPosition)
-                            if report_id == 1:
-                                report1 = HIDClockModeReports.from_bytes(data)
-                                print(report1)
+                    # try:
+                    # Read the report
+                    data = h.read(7)  # Adjust size if needed
+                    if data:
+                        report_id = data[0]
+                        print(f"REPORT ID: {report_id}")
+                        prevPrevPosition = copy.deepcopy(initialPosition)
+                        if report_id == 1:
+                            report1 = HIDClockModeReports.from_bytes(data)
+                            print(report1)
+                            try:
                                 currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
-                                try:
-                                    moveStr = currSquare + newSquare
-                                    board.push_uci(moveStr)
-                                    print(board)
-                                    print('\n')
-                                    flattened_array = [item for sublist in initialPosition for item in sublist]
-                                    flattened_array.insert(0, 5)
-                                    byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                                    bytes_written = h.write(byte_array)
-                                    if bytes_written == -1:
-                                        print("Error: Unable to write to device")
-                                        print(f"Last error: {h.error()}")
-                                except (chess.IllegalMoveError, TypeError, AttributeError) as e:
-                                    initialPosition = copy.deepcopy(prevPrevPosition)
-                                    bytes = [6, 255]
-                                    bytes_written = h.write(bytes)
-                                    # Catches errors that might occur during string concatenation
-                                    print(f"Error in move name: {type(e).__name__}")
-                                    print(f"Error message: {str(e)}")
-                                        
-                            elif report_id == 2:
-                                report2 = HIDClockModeReports.from_bytes(data)
-                                print(report2)  # 3 sets of pickup data
-                                currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
-                                try:
-                                    moveStr = currSquare + newSquare
-                                    board.push_uci(moveStr)
-                                    print(board)
-                                    print('\n')
-                                    flattened_array = [item for sublist in initialPosition for item in sublist]
-                                    flattened_array.insert(0, 5)
-                                    byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
-                                    bytes_written = h.write(byte_array)
-                                    if bytes_written == -1:
-                                        print("Error: Unable to write to device")
-                                        print(f"Last error: {h.error()}")
-                                except (chess.IllegalMoveError, TypeError, AttributeError) as e:
-                                    initialPosition = copy.deepcopy(prevPrevPosition)
-                                    bytes = [6, 255]
-                                    bytes_written = h.write(bytes)
-                                    # Catches errors that might occur during string concatenation
-                                    print(f"Error in move name: {type(e).__name__}")
-                                    print(f"Error message: {str(e)}")
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                                print('\n')
+                                flattened_array = [item for sublist in initialPosition for item in sublist]
+                                flattened_array.insert(0, 5)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                bytes_written = h.write(byte_array)
+                                if bytes_written == -1:
+                                    print("Error: Unable to write to device")
+                                    print(f"Last error: {h.error()}")
+                            except (chess.IllegalMoveError, TypeError, AttributeError, IndexError) as e:
+                                initialPosition = copy.deepcopy(prevPrevPosition)
+                                bytes = [6, 255]
+                                bytes_written = h.write(bytes)
+                                # Catches errors that might occur during string concatenation
+                                print(f"Error in move name: {type(e).__name__}")
+                                print(f"Error message: {str(e)}")
                                     
-                            elif report_id == 3:
-                                if (data[1] == 255):
-                                    # TODO: TEST THIS SHIT!!!!!!!!!!!!!!!!!!!!!!
-                                    open_game_in_chesscom(board)
-                                    board.reset()
-                                    initialPosition = copy.deepcopy(initialPositionCopy)
-                                    print("RESET GAME")
-                                else: 
-                                    pieceI = data[1] >> 3
-                                    pieceJ = data[1] & 0x7
-                                    print("LIGHTS")
+                        elif report_id == 2:
+                            report2 = HIDClockModeReports.from_bytes(data)
+                            print(report2)  # 3 sets of pickup data
+                            currSquare, newSquare = takenPiece(board, initialPosition, report2.firstPickupRow, report2.firstPickupCol, report2.secondPickupRow, report2.secondPickupCol, report2.finalPickupRow, report2.finalPickupCol)
+                            try:
+                                moveStr = currSquare + newSquare
+                                board.push_uci(moveStr)
+                                print(board)
+                                print('\n')
+                                flattened_array = [item for sublist in initialPosition for item in sublist]
+                                flattened_array.insert(0, 5)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+                                bytes_written = h.write(byte_array)
+                                if bytes_written == -1:
+                                    print("Error: Unable to write to device")
+                                    print(f"Last error: {h.error()}")
+                            except (chess.IllegalMoveError, TypeError, AttributeError) as e:
+                                initialPosition = copy.deepcopy(prevPrevPosition)
+                                bytes = [6, 255]
+                                bytes_written = h.write(bytes)
+                                # Catches errors that might occur during string concatenation
+                                print(f"Error in move name: {type(e).__name__}")
+                                print(f"Error message: {str(e)}")
+                                
+                        elif report_id == 3:
+                            if (data[1] == 255):
+                                # TODO: TEST THIS SHIT!!!!!!!!!!!!!!!!!!!!!!
+                                open_game_in_chesscom(board)
+                                board.reset()
+                                initialPosition = copy.deepcopy(initialPositionCopy)
+                                print("RESET GAME")
+                            else: 
+                                pieceI = data[1] >> 3
+                                pieceJ = data[1] & 0x7
+                                print("LIGHTS")
+                                try:
                                     lights = piecePossibleMoves(board, pieceI, pieceJ)
-                                    flattened_array = [item for sublist in lights for item in sublist]
-                                    flattened_array.insert(0, 4)
-                                    bytes_written = h.write(flattened_array)
-                                    print(f"Bytes Written: {bytes_written}")
-                                    if bytes_written == -1:
-                                        print("Error: Unable to write to device")
-                                        print(f"Last error: {h.error()}")
-                            else:
-                                print(f"Unknown Report ID: {report_id}")
-                        time.sleep(0.1)  # Small delay to prevent tight looping
-                    except IOError as e:
-                        print(f"IOError: {str(e)}")
-                        break
+                                except (chess.IllegalMoveError, TypeError, AttributeError) as e:
+                                    initialPosition = copy.deepcopy(prevPrevPosition)
+                                    bytes = [6, 255]
+                                    bytes_written = h.write(bytes)
+                                    # Catches errors that might occur during string concatenation
+                                    print(f"Error in move name: {type(e).__name__}")
+                                    print(f"Error message: {str(e)}")
+                                    continue
+                                flattened_array = [item for sublist in lights for item in sublist]
+                                flattened_array.insert(0, 4)
+                                bytes_written = h.write(flattened_array)
+                                print(f"Bytes Written: {bytes_written}")
+                                if bytes_written == -1:
+                                    print("Error: Unable to write to device")
+                                    print(f"Last error: {h.error()}")
+                        else:
+                            print(f"Unknown Report ID: {report_id}")
+                    # time.sleep(0.1)  # Small delay to prevent tight looping
+                    # except IOError as e:
+                    #     print(f"IOError: {str(e)}")
+                    #     break
             except IOError as e:
                 print(f"Failed to connect to the device: {str(e)}")
-                print("Retrying in 5 seconds...")
-                time.sleep(5)
+                print("Retrying in 1 seconds...")
+                time.sleep(2)
     except IOError as e:
         print(f"Unable to open device: {str(e)}")
     finally:
