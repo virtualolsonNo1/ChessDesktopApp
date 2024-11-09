@@ -139,6 +139,8 @@ def piecePossibleMoves(board, pieceI, pieceJ):
 
             # if en passant is possible and pawn taking is picked up, light up the pawn to be taken's square and the destination square
             if board.is_en_passant(move):
+                # light up square of piece to be taken but not square to move to, as it's not a possible move yet
+                empty_board[7 - chess.square_rank(move.to_square)][chess.square_file(move.to_square)] = 0
                 if board.turn == chess.WHITE:
                     empty_board[7 - chess.square_rank(move.to_square) + 1][chess.square_file(move.to_square)] = 1
                 else:
