@@ -108,7 +108,7 @@ def piecePossibleMoves(board, pieceI, pieceJ):
         isPlayersPiece = False
         valid_moves = [move for move in legal_moves if pieceSquare in chess.square_name(move.to_square)]
         # special handling for en passant
-        if board.ep_square is not None:
+        if board.ep_square is not None and ((board.turn == chess.WHITE and chess.square_rank(board.ep_square) == 7 - (pieceI - 1) and chess.square_file(board.ep_square) == pieceJ) or (board.turn == chess.BLACK and chess.square_rank(board.ep_square) == 7 - (pieceI + 1) and chess.square_file(board.ep_square) == pieceJ)):
             ep_square = chess.square_name(board.ep_square)
             rank = 8 - pieceI
             # For white's turn, the capturable pawn must be on rank 5
