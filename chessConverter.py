@@ -481,8 +481,16 @@ def main():
                                     print(f"Error message: {str(e)}")
                                     continue
                                 flattened_array = [item for sublist in lights for item in sublist]
-                                flattened_array.insert(0, LIGHTS_DATA_REPORT_OUT)
-                                bytes_written = h.write(flattened_array)
+                                short_arr = [0 for _ in range(8)]
+
+                                # convert 64 byte light array to 8 byte array where each bit is a square in that row
+                                for i in range(0, 8):
+                                    short_arr[i] = flattened_array[i * 8] << 7 | flattened_array[i * 8 + 1] << 6 | flattened_array[i * 8 + 2] << 5 | flattened_array[i * 8 + 3] << 4 | flattened_array[i * 8 + 4] << 3 | flattened_array[i * 8 + 5] << 2 | flattened_array[i * 8 + 6] << 1 | flattened_array[i * 8 + 7] << 0
+
+                                # insert byte for report ID
+                                short_arr.insert(0, LIGHTS_DATA_REPORT_OUT)
+                                bytes_written = h.write(short_arr)
+                                print(f"Short arr: {short_arr}")
                                 print(f"Bytes Written: {bytes_written}")
                                 if bytes_written == -1:
                                     print("Error: Unable to write to device")
