@@ -411,9 +411,14 @@ def main():
                                 board.push_uci(moveStr)
                                 print(board)
                                 print('\n')
-                                flattened_array = [item for sublist in initialPosition for item in sublist]
-                                flattened_array.insert(0, PIECES_DATA_REPORT_OUT)
-                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+
+                                # convert initial position to piece values where each byte is 2 4-bit pieces
+                                flattened_array_chars = [item for sublist in initialPosition for item in sublist]
+                                print(flattened_array_chars)
+                                packed_bytes = [(PIECE_VALUES[flattened_array_chars[i]] << 4) | PIECE_VALUES[flattened_array_chars[i + 1]] for i in range(0, len(flattened_array_chars), 2)]
+                                print(packed_bytes)
+                                packed_bytes.insert(0, PIECES_DATA_REPORT_OUT)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in packed_bytes)
                                 bytes_written = h.write(byte_array)
                                 if bytes_written == -1:
                                     print("Error: Unable to write to device")
@@ -435,9 +440,12 @@ def main():
                                 board.push_uci(moveStr)
                                 print(board)
                                 print('\n')
-                                flattened_array = [item for sublist in initialPosition for item in sublist]
-                                flattened_array.insert(0, PIECES_DATA_REPORT_OUT)
-                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in flattened_array)
+
+                                # convert initial position to piece values where each byte is 2 4-bit pieces
+                                flattened_array_chars = [item for sublist in initialPosition for item in sublist]
+                                packed_bytes = [(PIECE_VALUES[flattened_array_chars[i]] << 4) | PIECE_VALUES[flattened_array_chars[i + 1]] for i in range(0, len(flattened_array_chars), 2)]
+                                packed_bytes.insert(0, PIECES_DATA_REPORT_OUT)
+                                byte_array = bytearray(ord(x) if isinstance(x, str) else x for x in packed_bytes)
                                 bytes_written = h.write(byte_array)
                                 if bytes_written == -1:
                                     print("Error: Unable to write to device")
