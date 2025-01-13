@@ -372,6 +372,24 @@ def pieceMoved(prevPosition, firstPickupRow, firstPickupCol, finalPickupRow, fin
     return currSquare, newSquare
 
 
+def checkGameOver(board: chess.Board, h) -> bool:
+        # check if game is over
+        isGameOver = board.is_game_over()
+        if (isGameOver):
+                outcome = board.outcome()
+                if (board.is_checkmate()):
+                        if outcome.winner == chess.WHITE:
+                                bytes = [ERROR_REPORT_OUT, 1]
+                                bytes_written = h.write(bytes)
+                        else:
+                                bytes = [ERROR_REPORT_OUT, 2]
+                                bytes_written = h.write(bytes)
+                else:
+                        bytes = [ERROR_REPORT_OUT, 3]
+                        bytes_written = h.write(bytes)
+                return True
+        return False
+
 
 
 def main():
@@ -412,6 +430,14 @@ def main():
                                 print(board)
                                 print('\n')
 
+                                gameOver = checkGameOver(board, h)
+                                if gameOver:
+                                        # open_game_in_chesscom(board)
+                                        # board.reset()
+                                        # initialPosition = copy.deepcopy(initialPositionCopy)
+                                        # print("RESET GAME")
+                                        continue
+
                                 # convert initial position to piece values where each byte is 2 4-bit pieces
                                 flattened_array_chars = [item for sublist in initialPosition for item in sublist]
                                 print(flattened_array_chars)
@@ -440,8 +466,16 @@ def main():
                                 board.push_uci(moveStr)
                                 print(board)
                                 print('\n')
-
-                                # convert initial position to piece values where each byte is 2 4-bit pieces
+                                
+                                gameOver = checkGameOver(board, h)
+                                if gameOver:
+                                        # open_game_in_chesscom(board)
+                                        # board.reset()
+                                        # initialPosition = copy.deepcopy(initialPositionCopy)
+                                        # print("RESET GAME")
+                                        continue
+                                        
+                                # convert position to piece values where each byte is 2 4-bit pieces
                                 flattened_array_chars = [item for sublist in initialPosition for item in sublist]
                                 packed_bytes = [(PIECE_VALUES[flattened_array_chars[i]] << 4) | PIECE_VALUES[flattened_array_chars[i + 1]] for i in range(0, len(flattened_array_chars), 2)]
                                 packed_bytes.insert(0, PIECES_DATA_REPORT_OUT)
