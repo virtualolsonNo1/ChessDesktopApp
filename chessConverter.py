@@ -498,6 +498,8 @@ def main():
                                 board.reset()
                                 initialPosition = copy.deepcopy(initialPositionCopy)
                                 print("RESET GAME")
+                                # TODO: I THINK THAT"S REDUNDANT!!!!!!
+                                # continue
 
                             # if report byte isn't 255, it's a lights report not a reset
                             else: 
