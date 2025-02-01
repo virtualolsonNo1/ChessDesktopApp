@@ -40,7 +40,8 @@ def is_sorted(arr, c):
 
 
 def main():
-    arr = [5, 4, 3, 2, 1, 7, 6]
+    arr = [5, 4, 3, 2, 1, 7, 6, 8]
+    random.shuffle(arr)
     arr = is_sorted(arr, c)
     # sorted
     print("Sorted for %s:" % c)
