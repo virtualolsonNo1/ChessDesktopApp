@@ -17,7 +17,11 @@ def is_sorted(arr, c):
         srtArr = arrCp[0:len(arrCp) - 1]
         srtArr = is_sorted(srtArr, c)
         # print(sorted)
-        # print(arr)
+        print("Sorted array")
+        print(srtArr)
+
+        print("Comparison value")
+        print(lastEl)
         if arr[len(arr) - 1] >= srtArr[len(srtArr) - 1]:
 
             # return True, arr
@@ -28,7 +32,7 @@ def is_sorted(arr, c):
             print(arr)
             return arr
         else:
-            print(arr)
+            # print(arr)
             random.shuffle(arr)
             print("SHUFFLING!!!!!!")
             print(arr)
