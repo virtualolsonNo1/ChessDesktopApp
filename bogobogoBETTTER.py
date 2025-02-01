@@ -11,9 +11,9 @@ def is_sorted(arr, c):
     print(arr)
     if len(arr) <= 1:
         return arr
-    # while (True):
 
     lastEl = arr[-1]
+    # TODO: IS THIS NECESSARY
     arrCp = copy.deepcopy(arr)
     srtArr = arrCp[0:len(arrCp) - 1]
     srtArr = is_sorted(srtArr, c)
@@ -32,7 +32,6 @@ def is_sorted(arr, c):
         print(arr)
         return arr
     else:
-        # print(arr)
         random.shuffle(arr)
         print("SHUFFLING!!!!!!")
         print(arr)
