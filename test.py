@@ -11,7 +11,7 @@ def is_sorted(arr):
 
     arrCp = copy.deepcopy(arr)
     arrCp[0:-1] = is_sorted(arrCp[0:-1])
-    if arrCp[-1] >= arrCp[-2]:
+    if arrCp[-1] >= max(arrCp[0:-1]):
         if arr == arrCp:
             return arrCp
         else:
@@ -25,23 +25,27 @@ def is_sorted(arr):
 
 def main():
     # Check current limit
-    # random.seed(92)
     print("Current recursion limit:", sys.getrecursionlimit())  # Default is usually 1000
 
     # Set a new limit (for example, 5000)
     sys.setrecursionlimit(20000)
 
     print("New recursion limit:", sys.getrecursionlimit())
-    arr = [1, 2, 3, 4, 5, 6]
-    random.shuffle(arr)
-    currTime = time.time()
-    arr = is_sorted(arr)
-    newTime = time.time()
-    # sorted
-    # print("Sorted for %s:" % c)
-    # print(arr)
-    print("Final sorted arr: ")
-    print(arr)
-    print(newTime - currTime)
+    
+    average = 0
+    for i in range(40):
+        arr = [1, 2, 3, 4, 5, 6]
+        random.shuffle(arr)
+        currTime = time.time()
+        arr = is_sorted(arr)
+        newTime = time.time()
+        # sorted
+        # print("Sorted for %s:" % c)
+        # print(arr)
+        print("Final sorted arr: ")
+        print(arr)
+        print(newTime - currTime)
+        average += newTime - currTime
 
+    print(average / 40)
 main()
