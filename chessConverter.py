@@ -7,7 +7,23 @@ import time
 from hidFuncs import find_device, VENDOR_ID, PRODUCT_ID
 import struct
 from analysis import open_game_in_chesscom
+import asyncio
+import websockets
 
+async def connect_to_websocket():
+    uri = "ws://192.168.1.68:8080"
+    print("Connecting to frontend...\n")
+    while(True):
+        try:
+            async with websockets.connect(uri) as websocket:
+                print("Connected to frontend!\n")
+                return websocket
+        except Exception as e:
+            print("Couldn't connect!!!\n")
+            await asyncio.sleep(1)
+            continue
+        
+        
 # constants for pieces as bits to be sent
 # Empty square
 EMPTY = 0
@@ -390,16 +406,24 @@ def checkGameOver(board: chess.Board, h) -> bool:
                 return True
         return False
 
-
-
-def main():
-    global initialPosition
-
+async def find_device_async():
     device_info = find_device()
     while not device_info:
         device_info = find_device()
         print(f"Device with VID:{VENDOR_ID:04x} and PID:{PRODUCT_ID:04x} not found")
-        time.sleep(1)
+        await asyncio.sleep(1)
+    return device_info
+
+
+async def main():
+    global initialPosition
+
+
+	# connect to frontend and chessboard
+    websocket, device_info = await asyncio.gather(
+        connect_to_websocket(),
+        find_device_async()
+    )
 
     board = chess.Board()
 
@@ -2288,4 +2312,4 @@ def main():
 
 
 if __name__ == '__main__':
-		main()
+		asyncio.run(main())
