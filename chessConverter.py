@@ -15,7 +15,7 @@ async def connect_to_websocket():
     print("Connecting to frontend...\n")
     while(True):
         try:
-            async with websockets.connect(uri) as websocket:
+                websocket = await websockets.connect(uri, ping_interval=None)
                 print("Connected to frontend!\n")
                 return websocket
         except Exception as e:
@@ -451,6 +451,9 @@ async def main():
                                 currSquare, newSquare = pieceMoved(initialPosition, report1.firstPickupRow, report1.firstPickupCol, report1.finalPickupRow, report1.finalPickupCol)
                                 moveStr = currSquare + newSquare
                                 board.push_uci(moveStr)
+                                await websocket.send(moveStr)
+                                response = await websocket.recv()
+                                print(response)
                                 print(board)
                                 print('\n')
 
@@ -488,6 +491,9 @@ async def main():
                             try:
                                 moveStr = currSquare + newSquare
                                 board.push_uci(moveStr)
+                                await websocket.send(moveStr)
+                                response = await websocket.recv()
+                                print(response)
                                 print(board)
                                 print('\n')
                                 
@@ -560,7 +566,7 @@ async def main():
             except IOError as e:
                 print(f"Failed to connect to the device: {str(e)}")
                 print("Retrying in 1 seconds...")
-                time.sleep(2)
+                await asyncio.sleep(2)
     except IOError as e:
         print(f"Unable to open device: {str(e)}")
     finally:
