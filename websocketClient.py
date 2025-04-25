@@ -3,7 +3,7 @@ import websockets
 import time
 
 async def connect_to_websocket():
-    uri = "ws://192.168.1.68:8080"
+    uri = "ws://10.60.49.95:8080"
     async with websockets.connect(uri) as websocket:
         print("Connected")
         # await websocket.send("Hello Server!")
@@ -54,8 +54,8 @@ async def connect_to_websocket():
 "f7e5", "f6e5",
 "d3e4"]
         for move in moves:
-            websocket.send(move)
+            await websocket.send(move)
             await websocket.recv()
-            asyncio.sleep(10)
+            time.sleep(10)
         
 asyncio.run(connect_to_websocket())
