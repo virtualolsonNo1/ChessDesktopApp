@@ -528,6 +528,9 @@ async def main():
                                 board.reset()
                                 initialPosition = copy.deepcopy(initialPositionCopy)
                                 print("RESET GAME")
+                                await websocket.send("reset game")
+                                response = await websocket.recv()
+
                                 # TODO: I THINK THAT"S REDUNDANT!!!!!!
                                 # continue
 
