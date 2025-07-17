@@ -11,7 +11,7 @@ import asyncio
 import websockets
 
 async def connect_to_websocket():
-    uri = "ws://192.168.1.68:8080"
+    uri = "ws://192.168.1.71:8080"
     print("Connecting to frontend...\n")
     while(True):
         try:
